@@ -75,36 +75,7 @@
 
       <div class="classes">
         <h3>Classes</h3>
-        <div class="class-list">
-          <div class="class-card" v-for="c in flightStore.selectedFlight.classes" :key="c.id">
-            <div class="row">
-              <div class="label">Type</div>
-              <div class="value strong">{{ c.classType }}</div>
-            </div>
-            <div class="row">
-              <div class="label">Seat Capacity</div>
-              <div class="value">{{ c.seatCapacity }}</div>
-            </div>
-            <div class="row">
-              <div class="label">Available Seats</div>
-              <div class="value">{{ c.availableSeats }}</div>
-            </div>
-            <div class="row">
-              <div class="label">Price</div>
-              <div class="value">{{ formatPrice(c.price) }}</div>
-            </div>
-
-            <details v-if="c.seats && c.seats.length" class="seats">
-              <summary>View Seats ({{ c.seats.length }})</summary>
-              <div class="seats-grid">
-                <div class="seat-chip" v-for="s in c.seats" :key="s.id" :class="{ booked: s.isBooked }">
-                  <span class="code">{{ s.seatCode }}</span>
-                  <span class="status">{{ s.isBooked ? 'Booked' : 'Available' }}</span>
-                </div>
-              </div>
-            </details>
-          </div>
-        </div>
+        <ClassFlightList :classes="flightStore.selectedFlight.classes" />
       </div>
 
       <div class="actions">
@@ -130,6 +101,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useFlightStore } from '@/stores/flight/flight'
 import { useAirlineStore } from '@/stores/airline/airline'
 import { useAirportStore } from '@/stores/airport/airport'
+import ClassFlightList from '@/components/classFlight/ClassFlightList.vue'
 
 const route = useRoute()
 const router = useRouter()
