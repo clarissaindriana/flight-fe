@@ -148,11 +148,18 @@
             👁️ Detail
           </button>
           <button
-            class="action-btn"
-            :class="airplane.isDeleted ? 'activate-btn' : 'delete-btn'"
+            v-if="!airplane.isDeleted"
+            class="action-btn delete-btn"
             @click="handleToggleStatus(airplane)"
           >
-            {{ airplane.isDeleted ? '🔄 Activate' : '🗑️ Deactivate' }}
+            🗑️ Deactivate
+          </button>
+          <button
+            v-if="airplane.isDeleted"
+            class="action-btn activate-btn"
+            @click="handleActivate(airplane)"
+          >
+            🔄 Activate
           </button>
         </div>
       </div>
@@ -250,16 +257,38 @@ const handleViewDetail = (airplane: Airplane) => {
 }
 
 const handleToggleStatus = async (airplane: Airplane) => {
-  if (confirm(`Are you sure you want to ${airplane.isDeleted ? 'activate' : 'deactivate'} this airplane?`)) {
+  if (confirm('Are you sure you want to deactivate this airplane?')) {
     try {
       await airplaneStore.deleteAirplane(airplane.id)
       // Refresh the list after successful operation
       await airplaneStore.fetchAirplanes()
     } catch (error: any) {
-      console.error('Failed to toggle airplane status:', error)
+      console.error('Failed to deactivate airplane:', error)
 
       // Extract error message from backend response
-      let errorMessage = 'Failed to update airplane status. Please try again.'
+      let errorMessage = 'Failed to deactivate airplane. Please try again.'
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error?.message) {
+        errorMessage = error.message
+      }
+
+      alert(errorMessage)
+    }
+  }
+}
+
+const handleActivate = async (airplane: Airplane) => {
+  if (confirm('Are you sure you want to activate this airplane?')) {
+    try {
+      await airplaneStore.activateAirplane(airplane.id)
+      // Refresh the list after successful operation
+      await airplaneStore.fetchAirplanes()
+    } catch (error: any) {
+      console.error('Failed to activate airplane:', error)
+
+      // Extract error message from backend response
+      let errorMessage = 'Failed to activate airplane. Please try again.'
       if (error?.response?.data?.message) {
         errorMessage = error.response.data.message
       } else if (error?.message) {

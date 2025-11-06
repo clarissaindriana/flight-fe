@@ -27,7 +27,7 @@ export const airplaneService = {
       queryParams.append('manufactureYear', params.manufactureYear.toString())
     }
 
-    const url = `/airplane/all${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+    const url = `/airplanes/all${queryParams.toString() ? '?' + queryParams.toString() : ''}`
     const response = await api.get(url)
     return response.data.data
   },
@@ -44,6 +44,11 @@ export const airplaneService = {
 
   async deleteAirplane(id: string): Promise<Airplane> {
     const response = await api.post(`/airplane/${id}/delete`)
+    return response.data.data
+  },
+
+  async activateAirplane(id: string): Promise<Airplane> {
+    const response = await api.post(`/airplane/${id}/activate`)
     return response.data.data
   },
 }

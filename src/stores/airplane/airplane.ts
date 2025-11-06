@@ -81,6 +81,25 @@ export const useAirplaneStore = defineStore('airplane', () => {
     }
   }
 
+  const activateAirplane = async (id: string) => {
+    loading.value = true
+    error.value = null
+    try {
+      const activatedAirplane = await airplaneService.activateAirplane(id)
+      const index = airplanes.value.findIndex(a => a.id === id)
+      if (index !== -1) {
+        airplanes.value[index] = activatedAirplane
+      }
+      return activatedAirplane
+    } catch (err) {
+      error.value = 'Failed to activate airplane'
+      console.error(err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     airplanes,
     loading,
@@ -89,5 +108,6 @@ export const useAirplaneStore = defineStore('airplane', () => {
     createAirplane,
     updateAirplane,
     deleteAirplane,
+    activateAirplane,
   }
 })
