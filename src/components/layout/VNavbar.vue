@@ -19,9 +19,9 @@
           <span class="link-icon">🛫</span>
           Flights
         </router-link>
-        <router-link to="/flight-bookings" class="nav-link">
+        <router-link to="/bookings" class="nav-link">
           <span class="link-icon">🎫</span>
-          Flight Bookings
+          Bookings
         </router-link>
       </div>
     </div>

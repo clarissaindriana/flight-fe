@@ -149,10 +149,17 @@ export const useFlightStore = defineStore('flight', () => {
 
   const selectDeparture = (id: string) => {
     selectedDepartureFlightId.value = id
+    // reset return when departure changes
+    selectedReturnFlightId.value = null
   }
 
   const selectReturn = (id: string) => {
     selectedReturnFlightId.value = id
+  }
+
+  const clearRoundTripSelection = () => {
+    selectedDepartureFlightId.value = null
+    selectedReturnFlightId.value = null
   }
 
   return {
@@ -186,5 +193,6 @@ export const useFlightStore = defineStore('flight', () => {
     setOneWay,
     selectDeparture,
     selectReturn,
+    clearRoundTripSelection,
   }
 })

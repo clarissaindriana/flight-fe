@@ -57,6 +57,29 @@ const router = createRouter({
       component: () => import('@/views/flight/FlightUpdateView.vue'),
       props: true,
     },
+    // Bookings
+    {
+      path: '/bookings',
+      name: 'bookings',
+      component: () => import('@/views/booking/BookingListView.vue'),
+    },
+    {
+      path: '/bookings/create',
+      name: 'booking-create',
+      component: () => import('@/views/booking/CreateBookingView.vue'),
+    },
+    {
+      path: '/bookings/:id',
+      name: 'booking-detail',
+      component: () => import('@/views/booking/BookingDetailView.vue'),
+      props: true,
+    },
+    {
+      path: '/bookings/:id/update',
+      name: 'booking-update',
+      component: () => import('@/views/booking/UpdateBookingView.vue'),
+      props: true,
+    },
   ],
 })
 

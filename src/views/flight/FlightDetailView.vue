@@ -157,7 +157,7 @@ async function cancelFlight() {
 
 function bookFlight() {
   if (!flightStore.selectedFlight) return
-  alert(`Proceed to booking for flight: ${flightStore.selectedFlight.id}`)
+  router.push(`/bookings/create?flightId=${encodeURIComponent(flightStore.selectedFlight.id)}`)
 }
 </script>
 

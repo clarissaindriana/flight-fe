@@ -94,14 +94,23 @@
         <span v-if="flightStore.selectedDepartureFlightId && flightStore.selectedReturnFlightId"> → </span>
         <span v-if="flightStore.selectedReturnFlightId">🛬 Return: {{ flightStore.selectedReturnFlightId }}</span>
       </div>
-      <button
-        class="btn proceed-btn"
-        type="button"
-        :disabled="!canProceedRoundTrip"
-        @click="proceedRoundTrip"
-      >
-        ✓ Proceed to Booking
-      </button>
+      <div style="display:flex; gap:.5rem;">
+        <button
+          class="btn proceed-btn"
+          type="button"
+          :disabled="!canProceedRoundTrip"
+          @click="proceedRoundTrip"
+        >
+          ✓ Proceed to Booking
+        </button>
+        <button
+          class="btn btn-secondary"
+          type="button"
+          @click="undoRoundTrip"
+        >
+          ↺ Undo Selection
+        </button>
+      </div>
     </section>
 
     <!-- Loading / Error / Empty -->
@@ -119,8 +128,15 @@
 
     <div v-else-if="filteredDisplayFlights.length === 0" class="state-card">
       <div class="empty-icon">🛩️</div>
-      <h3>No flights found</h3>
-      <p>Try adjusting your filters or search term.</p>
+      <template v-if="!flightStore.oneWayMode && flightStore.selectedDepartureFlightId && !flightStore.selectedReturnFlightId">
+        <h3>No return flights found</h3>
+        <p>There are no available return flights for the selected departure. Undo to pick a different departure.</p>
+        <button class="btn btn-secondary" type="button" @click="undoRoundTrip">↺ Undo Selection</button>
+      </template>
+      <template v-else>
+        <h3>No flights found</h3>
+        <p>Try adjusting your filters or search term.</p>
+      </template>
     </div>
 
     <!-- Flights -->
@@ -377,7 +393,7 @@ async function softDelete(f: any) {
 }
 
 function selectOneWay(f: any) {
-  alert(`Proceed to booking for flight: ${f.id}`)
+  router.push(`/bookings/create?flightId=${encodeURIComponent(f.id)}`)
 }
 
 function selectDeparture(f: any) {
@@ -388,9 +404,12 @@ function selectReturn(f: any) {
   if (canProceedRoundTrip.value) proceedRoundTrip()
 }
 function proceedRoundTrip() {
-  alert(`Proceed to booking:
-Departure: ${flightStore.selectedDepartureFlightId}
-Return: ${flightStore.selectedReturnFlightId}`)
+  if (!flightStore.selectedDepartureFlightId || !flightStore.selectedReturnFlightId) return
+  router.push(`/bookings/create?departureFlightId=${encodeURIComponent(flightStore.selectedDepartureFlightId)}&returnFlightId=${encodeURIComponent(flightStore.selectedReturnFlightId)}`)
+}
+
+function undoRoundTrip() {
+  flightStore.clearRoundTripSelection()
 }
 
 function isValidReturnOption(f: any) {

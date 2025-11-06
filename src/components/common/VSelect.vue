@@ -9,14 +9,14 @@
       <select
         :id="selectId"
         ref="selectRef"
-        :value="modelValue"
+        :value="boundValue"
         :disabled="disabled"
         :class="[
           'v-select',
           size,
           { error: hasError, disabled }
         ]"
-        @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
+        @change="onChange"
         @blur="$emit('blur', $event)"
         @focus="$emit('focus', $event)"
       >
@@ -24,7 +24,7 @@
         <option
           v-for="option in options"
           :key="option.value"
-          :value="option.value"
+          :value="String(option.value)"
           :disabled="option.disabled"
         >
           {{ option.label }}
@@ -80,13 +80,22 @@ const emit = defineEmits<{
 }>()
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _emit = emit
- 
 
 const selectRef = ref<HTMLSelectElement>()
 const selectId = computed(() => `select-${Math.random().toString(36).substr(2, 9)}`)
 
 const hasError = computed(() => Boolean(props.error))
 const errorMessage = computed(() => props.error || '')
+
+// Coerce types so that selects with numeric option values emit numbers,
+// and the bound value is always compared as a string for proper rendering.
+const isNumericOptions = computed(() => props.options.some(o => typeof o.value === 'number'))
+const boundValue = computed(() => (props.modelValue === null || props.modelValue === undefined) ? '' : String(props.modelValue))
+function onChange(e: Event) {
+  const raw = (e.target as HTMLSelectElement).value
+  const next = isNumericOptions.value ? Number(raw) : raw
+  emit('update:modelValue', next as string | number)
+}
 
 defineExpose({
   focus: () => selectRef.value?.focus(),
