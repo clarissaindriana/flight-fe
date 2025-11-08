@@ -247,4 +247,18 @@ defineExpose({
   color: var(--color-gray-400);
   font-style: italic;
 }
+
+/* Ensure selected/active option visibility across browsers */
+.v-select option:checked,
+.v-select option:focus,
+.v-select option:active {
+  background-color: #fde7f2; /* light pink */
+  color: #9d174d; /* deep rose for better contrast */
+}
+
+/* Improve hover visibility in some browsers */
+.v-select option:hover {
+  background-color: #fce7f3; /* pink-100 */
+  color: var(--color-gray-900);
+}
 </style>

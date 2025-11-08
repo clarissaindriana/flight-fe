@@ -28,11 +28,22 @@
         </div>
 
         <div class="booking-info">
-          <p><strong>Flight:</strong> {{ booking.flightId }}</p>
-          <p><strong>Class:</strong> {{ booking.classFlightId }}</p>
+          <p>
+            <strong>Flight:</strong> {{ booking.flightId }}
+            <span
+              v-if="getFlightStatus(booking) !== null && showFlightStatus(getFlightStatus(booking))"
+              :class="['flight-status-badge', flightStatusClass(getFlightStatus(booking))]"
+            >
+              {{ flightStore.statusText(getFlightStatus(booking)!) }}
+            </span>
+          </p>
+          <p><strong>Class:</strong> {{ booking.classType || booking.classFlightId }}</p>
           <p><strong>Passengers:</strong> {{ booking.passengerCount }}</p>
           <p><strong>Total Price:</strong> ${{ booking.totalPrice }}</p>
           <p><strong>Contact:</strong> {{ booking.contactEmail }}</p>
+          <p v-if="booking.isDeleted" style="margin-top:0.25rem;color:#b91c1c;font-weight:600;">
+            Archived
+          </p>
         </div>
 
         <div class="booking-actions">
@@ -40,7 +51,7 @@
             View Details
           </VButton>
           <VButton
-            v-if="booking.status === 1"
+            v-if="canUpdate(booking)"
             size="sm"
             variant="primary"
             @click.stop="$emit('update', booking.id)"
@@ -48,7 +59,7 @@
             Update
           </VButton>
           <VButton
-            v-if="booking.status === 1"
+            v-if="canCancel(booking)"
             size="sm"
             variant="danger"
             @click.stop="$emit('cancel', booking.id)"
@@ -65,10 +76,12 @@
 import { computed } from 'vue'
 import VButton from '@/components/common/VButton.vue'
 import { useBookingStore } from '@/stores/booking/booking'
+import { useFlightStore } from '@/stores/flight/flight'
 import type { Booking } from '@/interfaces/booking.interface'
 
 interface Props {
   flightId?: string
+  includeArchived?: boolean
 }
 
 const props = defineProps<Props>()
@@ -81,12 +94,20 @@ const emit = defineEmits<{
 }>()
 
 const bookingStore = useBookingStore()
+const flightStore = useFlightStore()
 
-const bookings = computed(() =>
-  props.flightId
+const bookings = computed(() => {
+  // Base list (optionally filtered by flight)
+  let list = props.flightId
     ? bookingStore.bookings.filter(b => b.flightId === props.flightId)
     : bookingStore.bookings
-)
+
+  // Hide archived (isDeleted) when includeArchived is false/undefined
+  if (!props.includeArchived) {
+    list = list.filter(b => !b.isDeleted)
+  }
+  return list
+})
 
 const loading = computed(() => bookingStore.loading)
 const error = computed(() => bookingStore.error)
@@ -103,6 +124,45 @@ const getStatusClass = (status: number): string => {
     case 4: return 'status-rescheduled'
     default: return 'status-unknown'
   }
+}
+
+// Helpers based on related flight status
+const getFlightStatus = (booking: Booking): number | null => {
+  const f = flightStore.flights.find(f => f.id === booking.flightId)
+  return f ? Number(f.status) : null
+}
+
+// Show flight status only when In Flight (2), Finished (3), or Cancelled (5)
+const showFlightStatus = (status: number | null): boolean => {
+  if (status === null) return false
+  return [2, 3, 5].includes(Number(status))
+}
+
+const flightStatusClass = (status: number | null): string => {
+  switch (Number(status)) {
+    case 2: return 'flight-inflight'
+    case 3: return 'flight-finished'
+    case 5: return 'flight-cancelled'
+    default: return 'flight-unknown'
+  }
+}
+
+// Action gating: Unpaid/Paid bookings AND flight Scheduled/Delayed
+const canMutateByFlight = (status: number | null): boolean => {
+  if (status === null) return false
+  return status === 1 || status === 4
+}
+
+const canUpdate = (booking: Booking): boolean => {
+  const bs = Number(booking.status)
+  const fs = getFlightStatus(booking)
+  return !booking.isDeleted && (bs === 1 || bs === 2) && canMutateByFlight(fs)
+}
+
+const canCancel = (booking: Booking): boolean => {
+  const bs = Number(booking.status)
+  const fs = getFlightStatus(booking)
+  return !booking.isDeleted && (bs === 1 || bs === 2) && canMutateByFlight(fs)
 }
 </script>
 
@@ -217,5 +277,32 @@ const getStatusClass = (status: number): string => {
 
 .empty-state {
   font-style: italic;
+}
+.flight-status-badge {
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.flight-inflight {
+  background: var(--color-blue-100);
+  color: var(--color-blue-800);
+}
+
+.flight-finished {
+  background: var(--color-gray-100);
+  color: var(--color-gray-800);
+}
+
+.flight-cancelled {
+  background: var(--color-red-100);
+  color: var(--color-red-800);
+}
+
+.flight-unknown {
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
 }
 </style>

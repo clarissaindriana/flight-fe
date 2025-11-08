@@ -9,20 +9,28 @@
         <h2>Booking Details</h2>
         <div class="header-actions">
           <VButton
-            v-if="booking.status === 1"
+            v-if="booking && !booking.isDeleted && (booking.status === 1 || booking.status === 2) && (flightStatus === 1 || flightStatus === 4)"
             variant="primary"
             @click="$emit('update', booking.id)"
           >
             Update Booking
           </VButton>
           <VButton
-            v-if="booking.status === 1"
+            v-if="booking && !booking.isDeleted && (booking.status === 1 || booking.status === 2) && (flightStatus === 1 || flightStatus === 4)"
             variant="danger"
             @click="$emit('cancel', booking.id)"
           >
             Cancel Booking
           </VButton>
         </div>
+      </div>
+
+      <!-- Flight status warnings -->
+      <div v-if="flightStatus === 5" class="warning-banner cancelled">
+        ⚠️ This flight has been cancelled. The booking is displayed in read-only mode for archive purposes.
+      </div>
+      <div v-else-if="flightStatus === 3" class="warning-banner finished">
+        ℹ️ This flight has finished. Seat assignments are shown as historical information.
       </div>
 
       <div class="detail-grid">
@@ -40,7 +48,7 @@
             </div>
             <div class="info-item">
               <label>Class Flight:</label>
-              <span>{{ booking.classFlightId }}</span>
+              <span>{{ booking.classType || booking.classFlightId }}</span>
             </div>
             <div class="info-item">
               <label>Status:</label>
@@ -96,6 +104,7 @@
                 <p><strong>Birth Date:</strong> {{ formatDate(passenger.birthDate) }}</p>
                 <p><strong>Gender:</strong> {{ getGenderText(passenger.gender) }}</p>
                 <p><strong>ID/Passport:</strong> {{ passenger.idPassport }}</p>
+                <p><strong>Seat:</strong> {{ getSeatCode(String(passenger.id)) }}</p>
               </div>
             </div>
           </div>
@@ -113,10 +122,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import VButton from '@/components/common/VButton.vue'
 import { useBookingStore } from '@/stores/booking/booking'
 import { usePassengerStore } from '@/stores/passenger/passenger'
+import { useFlightStore } from '@/stores/flight/flight'
 import type { Booking } from '@/interfaces/booking.interface'
 
 interface Props {
@@ -132,10 +142,25 @@ const emit = defineEmits<{
 
 const bookingStore = useBookingStore()
 const passengerStore = usePassengerStore()
+const flightStore = useFlightStore()
 
 const booking = computed(() => bookingStore.currentBooking)
 const loading = computed(() => bookingStore.loading)
 const error = computed(() => bookingStore.error)
+
+// Load related flight detail for warning/context
+watch(booking, async (b) => {
+  if (b?.flightId) {
+    try {
+      await flightStore.fetchFlightDetail(b.flightId)
+    } catch (e) {
+      // ignore
+    }
+  }
+}, { immediate: true })
+
+const flight = computed(() => flightStore.selectedFlight)
+const flightStatus = computed(() => flight.value?.status ?? null)
 
 const getStatusText = (status: number): string => {
   return bookingStore.getBookingStatusText(status)
@@ -163,6 +188,12 @@ const formatDate = (dateString: string): string => {
   } catch {
     return dateString
   }
+}
+
+// Resolve seat code for a passenger from booking.seatAssignments
+const getSeatCode = (passengerId: string): string => {
+  const sa = booking.value?.seatAssignments?.find(a => a.passengerId === passengerId)
+  return sa?.seatCode ?? '—'
 }
 </script>
 
@@ -297,6 +328,25 @@ const formatDate = (dateString: string): string => {
   color: var(--color-gray-500);
   font-style: italic;
   padding: 2rem;
+}
+
+/* Flight Warning Banners */
+.warning-banner {
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.warning-banner.cancelled {
+  background: var(--color-red-50);
+  color: var(--color-red-800);
+  border-color: var(--color-red-200);
+}
+.warning-banner.finished {
+  background: var(--color-blue-50);
+  color: var(--color-blue-800);
+  border-color: var(--color-blue-200);
 }
 
 .loading, .error, .not-found {

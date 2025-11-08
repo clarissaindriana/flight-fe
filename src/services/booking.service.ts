@@ -3,8 +3,10 @@ import type { CommonResponseInterface } from '@/interfaces/common.response.inter
 import type { Booking, AddBookingRequest, UpdateBookingRequest } from '@/interfaces/booking.interface'
 
 export const bookingService = {
-  async getAllBookings(flightId?: string): Promise<CommonResponseInterface<Booking[]>> {
-    const params = flightId ? { flightId } : {}
+  async getAllBookings(options?: { flightId?: string; includeDeleted?: boolean }): Promise<CommonResponseInterface<Booking[]>> {
+    const params: Record<string, any> = {}
+    if (options?.flightId) params.flightId = options.flightId
+    if (options?.includeDeleted !== undefined) params.includeDeleted = options.includeDeleted
     const response = await api.get('/booking', { params })
     return response.data
   },
@@ -26,6 +28,14 @@ export const bookingService = {
 
   async cancelBooking(id: string): Promise<CommonResponseInterface<Booking>> {
     const response = await api.post(`/booking/delete/${id}`)
+    return response.data
+  },
+
+  // GET /booking/statistics?start=YYYY-MM-DD&end=YYYY-MM-DD
+  async getStatistics(start: string, end: string): Promise<CommonResponseInterface<Array<{ flightId: string; bookingCount: number; totalRevenue: number }>>> {
+    const response = await api.get('/booking/statistics', {
+      params: { start, end }
+    })
     return response.data
   }
 }

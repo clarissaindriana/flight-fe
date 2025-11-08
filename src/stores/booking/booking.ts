@@ -9,11 +9,11 @@ export const useBookingStore = defineStore('booking', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const fetchBookings = async (flightId?: string) => {
+  const fetchBookings = async (options?: { flightId?: string; includeDeleted?: boolean }) => {
     loading.value = true
     error.value = null
     try {
-      const response = await bookingService.getAllBookings(flightId)
+      const response = await bookingService.getAllBookings(options)
       bookings.value = response.data
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to fetch bookings'
