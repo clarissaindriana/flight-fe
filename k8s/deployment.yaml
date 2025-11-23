@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 2306211660-flight-fe
+  labels:
+    app: 2306211660-flight-fe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: 2306211660-flight-fe
+  template:
+    metadata:
+      labels:
+        app: 2306211660-flight-fe
+    spec:
+      containers:
+        - name: 2306211660-flight-fe
+          image: clarissaindriana/2306211660-fe:REPLACE_ME_TAG
+          ports:
+            - containerPort: 80
+          env:
+            - name: VITE_API_URL
+              value: "https://2306211660-be.hafizmuh.site"
+            - name: VITE_BE2_API_URL
+              value: "https://2306211660-be.hafizmuh.site"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
