@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: 2306211660-flight-fe
+  name: flight-2306211660-fe
   labels:
-    app: 2306211660-flight-fe
+    app: flight-2306211660-fe
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: 2306211660-flight-fe
+      app: flight-2306211660-fe
   template:
     metadata:
       labels:
-        app: 2306211660-flight-fe
+        app: flight-2306211660-fe
     spec:
       containers:
-        - name: 2306211660-flight-fe
+        - name: flight-2306211660-fe
           image: clarissaindriana/2306211660-fe:REPLACE_ME_TAG
           ports:
             - containerPort: 80

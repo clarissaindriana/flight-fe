@@ -65,6 +65,6 @@ deploy:
         sudo k3s kubectl apply -f ~/app/2306211660-flight-fe/k8s/deployment.yaml &&
         sudo k3s kubectl apply -f ~/app/2306211660-flight-fe/k8s/service.yaml &&
         sudo k3s kubectl apply -f ~/app/2306211660-flight-fe/k8s/ingress.yaml &&
-        sudo k3s kubectl rollout status deployment/2306211660-flight-fe -n default --timeout=5m
+        sudo k3s kubectl rollout status deployment/flight-2306211660-fe -n default --timeout=5m
       "
     - echo "Deployment completed successfully!"
