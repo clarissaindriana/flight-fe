@@ -11,25 +11,60 @@
           <span class="link-icon">🏠</span>
           Home
         </router-link>
-        <router-link to="/airplanes" class="nav-link">
+        <router-link v-if="canAccess('airplanes')" to="/airplanes" class="nav-link">
           <span class="link-icon">🛩️</span>
           Airplanes
         </router-link>
-        <router-link to="/flights" class="nav-link">
+        <router-link v-if="canAccess('flights')" to="/flights" class="nav-link">
           <span class="link-icon">🛫</span>
           Flights
         </router-link>
-        <router-link to="/bookings" class="nav-link">
+        <router-link v-if="canAccess('bookings')" to="/bookings" class="nav-link">
           <span class="link-icon">🎫</span>
           Bookings
         </router-link>
+      </div>
+
+      <div class="nav-auth">
+        <div v-if="isLoggedIn" class="user-info">
+          <span class="user-name">{{ currentUser?.name }}</span>
+          <span class="user-role">({{ currentUser?.role }})</span>
+          <button @click="handleLogout" class="logout-btn">
+            <span class="link-icon">🚪</span>
+            Logout
+          </button>
+        </div>
+        <div v-else class="auth-links">
+          <router-link to="/login" class="nav-link auth-link">
+            <span class="link-icon">🔐</span>
+            Login
+          </router-link>
+          <router-link to="/register" class="nav-link auth-link">
+            <span class="link-icon">📝</span>
+            Register
+          </router-link>
+        </div>
       </div>
     </div>
   </nav>
 </template>
 
 <script setup lang="ts">
-// No script needed for this simple navbar
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth/auth'
+import { canAccess } from '@/lib/rbac'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+const isLoggedIn = computed(() => authStore.isLoggedIn)
+const currentUser = computed(() => authStore.currentUser)
+
+const handleLogout = async () => {
+  await authStore.logoutUser()
+  router.push('/login')
+}
 </script>
 
 <style scoped>
@@ -96,6 +131,60 @@
   display: flex;
   gap: 1.5rem;
   align-items: center;
+}
+
+.nav-auth {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-gray-700);
+  font-weight: 500;
+}
+
+.user-name {
+  color: var(--color-gray-900);
+}
+
+.user-role {
+  color: var(--color-gray-600);
+  font-size: 0.9rem;
+}
+
+.logout-btn {
+  padding: 0.5rem 1rem;
+  background: var(--color-red);
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logout-btn:hover {
+  background: var(--color-red-dark);
+  transform: translateY(-1px);
+}
+
+.auth-links {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.auth-link {
+  padding: 0.75rem 1.25rem !important;
+  font-size: 0.95rem !important;
 }
 
 .nav-link {

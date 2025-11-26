@@ -21,9 +21,9 @@ spec:
             - containerPort: 80
           env:
             - name: VITE_API_URL
-              value: "https://2306211660-be.hafizmuh.site"
+              value: "http://2306211660-be.hafizmuh.site"
             - name: VITE_BE2_API_URL
-              value: "https://2306211660-be.hafizmuh.site"
+              value: "http://2306211660-be.hafizmuh.site"
           resources:
             requests:
               cpu: 50m
