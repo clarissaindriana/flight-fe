@@ -4,15 +4,20 @@ import type { LoginRequest, RegisterRequest, AuthResponse, User } from '@/interf
 const TOKEN_KEY = 'jwt_token';
 
 export const login = async (credentials: LoginRequest): Promise<AuthResponse> => {
-  const response = await api.post<AuthResponse>('/auth/login', credentials);
-  const data = response.data;
+  try {
+    const response = await api.post<AuthResponse>('/auth/login', credentials);
+    const data = response.data;
 
-  if (data.status === 200 && data.data?.token) {
-    // Store token in localStorage for client-side use
-    localStorage.setItem(TOKEN_KEY, data.data.token);
+    if (data.status === 200 && data.data?.token) {
+      // Store token in localStorage for client-side use
+      localStorage.setItem(TOKEN_KEY, data.data.token);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
   }
-
-  return data;
 };
 
 export const register = async (userData: RegisterRequest): Promise<any> => {
