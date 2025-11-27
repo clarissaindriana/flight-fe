@@ -1,11 +1,11 @@
-import api from '@/services/api';
+import api, { authApi } from '@/services/api';
 import type { LoginRequest, RegisterRequest, AuthResponse, User } from '@/interfaces/auth.interface';
 
 const TOKEN_KEY = 'jwt_token';
 
 export const login = async (credentials: LoginRequest): Promise<AuthResponse> => {
   try {
-    const response = await api.post<AuthResponse>('/auth/login', credentials);
+    const response = await authApi.post<AuthResponse>('/auth/login', credentials);
     const data = response.data;
 
     if (data.status === 200 && data.data?.token) {
@@ -21,7 +21,7 @@ export const login = async (credentials: LoginRequest): Promise<AuthResponse> =>
 };
 
 export const register = async (userData: RegisterRequest): Promise<any> => {
-  const response = await api.post('/auth/register', userData);
+  const response = await authApi.post('/auth/register', userData);
   return response.data;
 };
 
