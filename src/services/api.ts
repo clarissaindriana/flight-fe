@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { getToken } from '@/lib/auth'
 
-// Determine the correct API base URL for flight service
+// Determine the correct API base URL for flight service (and auth proxy)
 const getFlightApiBaseUrl = (): string => {
   // First try environment variable
   if (import.meta.env.VITE_API_BASE_URL) {
@@ -18,15 +18,11 @@ const getFlightApiBaseUrl = (): string => {
   return 'http://localhost:8080/api'
 }
 
-// Auth API uses friend's backend
+// Auth API now uses OUR backend as a proxy to avoid CORS issues
+// The backend will forward requests to the friend's profile service
 const getAuthApiBaseUrl = (): string => {
-  // First try environment variable
-  if (import.meta.env.VITE_AUTH_API_BASE_URL) {
-    return import.meta.env.VITE_AUTH_API_BASE_URL
-  }
-  
-  // Default to friend's profile service
-  return 'http://2306219575-be.hafizmuh.site/api'
+  // Auth requests go through our backend proxy
+  return getFlightApiBaseUrl()
 }
 
 const api = axios.create({
@@ -36,7 +32,7 @@ const api = axios.create({
   },
 })
 
-// Separate axios instance for auth API
+// Auth API now uses the same backend (proxy)
 const authApi = axios.create({
   baseURL: getAuthApiBaseUrl(),
   headers: {
