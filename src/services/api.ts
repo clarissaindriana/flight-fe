@@ -1,8 +1,27 @@
 import axios from 'axios'
 import { getToken } from '@/lib/auth'
 
+// Determine the correct API base URL
+const getApiBaseUrl = (): string => {
+  // First try environment variable
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL
+  }
+  
+  // For production deployments, use current domain
+  if (import.meta.env.PROD) {
+    const origin = window.location.origin
+    // Remove /fe path if present, and construct backend URL
+    const hostname = window.location.hostname
+    return `http://${hostname.replace('-fe.', '-be.')}/api`
+  }
+  
+  // Default for local development
+  return 'http://localhost:8080/api'
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
