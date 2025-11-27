@@ -21,7 +21,11 @@ const getFlightApiBaseUrl = (): string => {
 // Auth API now uses OUR backend as a proxy to avoid CORS issues
 // The backend will forward requests to the friend's profile service
 const getAuthApiBaseUrl = (): string => {
-  // Auth requests go through our backend proxy
+  // If explicit auth base URL is provided (e.g. friend's auth service), use it
+  if (import.meta.env.VITE_AUTH_BASE_URL) {
+    return import.meta.env.VITE_AUTH_BASE_URL as string
+  }
+  // Fallback: go through our backend proxy (which may proxy to the profile service)
   return getFlightApiBaseUrl()
 }
 
