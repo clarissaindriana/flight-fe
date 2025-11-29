@@ -82,6 +82,7 @@
         @cancel="handleCancel"
       />
     </section>
+
   </div>
 </template>
 
@@ -104,6 +105,7 @@ const includeArchived = ref(false)
 const searchText = ref('')
 const contactEmail = ref('')
 const status = ref<string | number>('')
+
 
 const handleCreate = () => {
   router.push('/bookings/create')
@@ -140,6 +142,7 @@ const reload = async () => {
     status: status.value ? Number(status.value) : undefined,
   })
 }
+
 
 const applyFilters = async () => {
   await reload()

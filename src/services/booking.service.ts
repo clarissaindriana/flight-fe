@@ -40,11 +40,57 @@ export const bookingService = {
     return response.data
   },
 
-  // GET /booking/statistics?start=YYYY-MM-DD&end=YYYY-MM-DD
-  async getStatistics(start: string, end: string): Promise<CommonResponseInterface<Array<{ flightId: string; bookingCount: number; totalRevenue: number }>>> {
-    const response = await api.get('/booking/statistics', {
-      params: { start, end }
+  // Booking chart by month/year, backed by /booking/chart
+  async getBookingChart(month: number, year: number): Promise<{
+    chart: Array<{
+      flightId: string
+      airlineName: string | null
+      origin: string | null
+      destination: string | null
+      totalBookings: number
+      totalRevenue: number
+    }>
+    summary: {
+      totalBookings: number
+      totalRevenue: number
+      topPerformer: string | null
+    }
+  }> {
+    const res = await api.get('/booking/chart', {
+      params: { month, year }
     })
-    return response.data
+
+    const raw = res.data?.data
+
+    // When backend returns empty list for no data in period
+    if (Array.isArray(raw)) {
+      return {
+        chart: [],
+        summary: {
+          totalBookings: 0,
+          totalRevenue: 0,
+          topPerformer: null,
+        },
+      }
+    }
+
+    const chart = (raw?.chart ?? []) as Array<{
+      flightId: string
+      airlineName: string | null
+      origin: string | null
+      destination: string | null
+      totalBookings: number
+      totalRevenue: number
+    }>
+
+    const summaryRaw = raw?.summary ?? {}
+    const summary = {
+      totalBookings: Number(summaryRaw.totalBookings ?? 0),
+      // Backend sends BigDecimal; treat as number for FE formatting
+      totalRevenue: Number(summaryRaw.totalRevenue ?? 0),
+      topPerformer: (summaryRaw.topPerformer ?? null) as string | null,
+    }
+
+    return { chart, summary }
   }
 }

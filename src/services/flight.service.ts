@@ -32,14 +32,36 @@ export const flightService = {
     const res = await api.post('/flight/create', payload)
     return res.data.data
   },
-
+ 
   async updateFlight(payload: UpdateFlightRequest): Promise<Flight> {
     const res = await api.put('/flight/update', payload)
     return res.data.data
   },
-
+ 
   async deleteFlight(id: string): Promise<Flight> {
     const res = await api.post(`/flight/delete/${encodeURIComponent(id)}`)
     return res.data.data
+  },
+
+  // Upcoming flight reminders (staff & customer)
+  // intervalHours: number of hours ahead (backend uses default 3h when invalid/<=0)
+  // customerId is optional and mainly used by staff; for customers backend enforces CurrentUser.
+  async getFlightReminders(
+    intervalHours: number,
+    customerId?: string,
+  ): Promise<any[]> {
+    const params: Record<string, any> = {}
+
+    if (intervalHours && Number(intervalHours) > 0) {
+      params.interval = `${intervalHours}h`
+    }
+
+    if (customerId) {
+      params.CustomerId = customerId
+    }
+
+    const res = await api.get('/flights/reminder', { params })
+    // Backend returns BaseResponseDTO with .data as list or [] with message
+    return res.data?.data ?? []
   },
 }
