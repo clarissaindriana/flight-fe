@@ -40,7 +40,10 @@ export const canAccess = (endpoint: string): boolean => {
     'bookings/create': ['Customer', 'Superadmin'],
     'bookings/update': ['Customer', 'Superadmin'],
     'bookings/cancel': ['Customer', 'Superadmin'],
+    // Aggregated statistics & charts on the dashboard
     'bookings/statistics': ['Superadmin', 'Flight Airline'],
+    // Ability to see inactive (isDeleted = TRUE) bookings in lists
+    'bookings/inactive': ['Superadmin', 'Flight Airline'],
 
     // Users (admin only)
     'users': ['Superadmin'],

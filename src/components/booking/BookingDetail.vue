@@ -9,14 +9,14 @@
         <h2>Booking Details</h2>
         <div class="header-actions">
           <VButton
-            v-if="booking && !booking.isDeleted && (booking.status === 1 || booking.status === 2) && (flightStatus === 1 || flightStatus === 4)"
+            v-if="booking && !booking.isDeleted && canUpdateBooking && (booking.status === 1 || booking.status === 2) && (flightStatus === 1 || flightStatus === 4)"
             variant="primary"
             @click="$emit('update', booking.id)"
           >
             Update Booking
           </VButton>
           <VButton
-            v-if="booking && !booking.isDeleted && (booking.status === 1 || booking.status === 2) && (flightStatus === 1 || flightStatus === 4)"
+            v-if="booking && !booking.isDeleted && canCancelBooking && (booking.status === 1 || booking.status === 2) && (flightStatus === 1 || flightStatus === 4)"
             variant="danger"
             @click="$emit('cancel', booking.id)"
           >
@@ -128,6 +128,7 @@ import { useBookingStore } from '@/stores/booking/booking'
 import { usePassengerStore } from '@/stores/passenger/passenger'
 import { useFlightStore } from '@/stores/flight/flight'
 import type { Booking } from '@/interfaces/booking.interface'
+import { canAccess } from '@/lib/rbac'
 
 interface Props {
   bookingId: string
@@ -143,6 +144,9 @@ const emit = defineEmits<{
 const bookingStore = useBookingStore()
 const passengerStore = usePassengerStore()
 const flightStore = useFlightStore()
+
+const canUpdateBooking = canAccess('bookings/update')
+const canCancelBooking = canAccess('bookings/cancel')
 
 const booking = computed(() => bookingStore.currentBooking)
 const loading = computed(() => bookingStore.loading)

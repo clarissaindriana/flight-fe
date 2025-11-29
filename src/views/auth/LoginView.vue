@@ -1,44 +1,52 @@
 <template>
-  <div class="login-container">
-    <div class="login-card">
-      <h2>Login</h2>
-      <form @submit.prevent="handleLogin" class="login-form">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            id="email"
-            v-model="form.email"
-            type="email"
-            required
-            placeholder="Enter your email"
-          />
-        </div>
+  <div class="auth-page">
 
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            required
-            placeholder="Enter your password"
-          />
-        </div>
+    <section class="auth-shell">
+      <div class="auth-card">
+        <header class="card-header">
+          <h2>Login</h2>
+        </header>
 
-        <button type="submit" :disabled="isLoading" class="login-btn">
-          {{ isLoading ? 'Logging in...' : 'Login' }}
-        </button>
+        <form @submit.prevent="handleLogin" class="auth-form">
+          <div class="form-group">
+            <label for="email" class="form-label">Email</label>
+            <input
+              id="email"
+              v-model="form.email"
+              type="email"
+              class="form-input"
+              required
+              placeholder="you@example.com"
+            />
+          </div>
 
-        <div v-if="error" class="error-message">
-          {{ error }}
-        </div>
-      </form>
+          <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input
+              id="password"
+              v-model="form.password"
+              type="password"
+              class="form-input"
+              required
+              placeholder="Enter your password"
+            />
+          </div>
 
-      <p class="register-link">
-        Don't have an account?
-        <router-link to="/register">Register here</router-link>
-      </p>
-    </div>
+          <button type="submit" :disabled="isLoading" class="btn btn-primary auth-btn">
+            {{ isLoading ? 'Logging in...' : 'Login' }}
+          </button>
+
+          <div v-if="error" class="error-banner">
+            {{ error }}
+          </div>
+        </form>
+
+        <p class="auth-switch">
+          Don't have an account?
+          <router-link to="/register">Register here</router-link>
+        </p>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -52,7 +60,7 @@ const authStore = useAuthStore()
 
 const form = reactive({
   email: '',
-  password: ''
+  password: '',
 })
 
 const isLoading = ref(false)
@@ -79,30 +87,72 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.login-container {
+.auth-page {
+  min-height: 100vh;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-hero {
+  padding: 2.5rem 2rem 2rem;
+  background: #F9CDD5;
+  color: #ffffff;
+}
+
+.hero-content {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.hero-title {
+  margin: 0;
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.hero-subtitle {
+  margin: 0.75rem 0 0;
+  font-size: 1rem;
+  opacity: 0.96;
+}
+
+.auth-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem 3rem;
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: #f5f5f5;
 }
 
-.login-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+.auth-card {
+  margin-top: -3rem;
+  background: var(--color-white);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-gray-100);
+  padding: 2.25rem 2.5rem;
+  max-width: 420px;
   width: 100%;
-  max-width: 400px;
 }
 
-.login-card h2 {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: #333;
+.card-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--color-gray-900);
 }
 
-.login-form {
+.card-header p {
+  margin: 0.6rem 0 0;
+  font-size: 0.95rem;
+  color: var(--color-gray-600);
+}
+
+.auth-form {
+  margin-top: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -111,70 +161,53 @@ const handleLogin = async () => {
 .form-group {
   display: flex;
   flex-direction: column;
+  gap: 0.4rem;
 }
 
-.form-group label {
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #555;
+.auth-btn {
+  width: 100%;
+  margin-top: 0.25rem;
 }
 
-.form-group input {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-}
-
-.login-btn {
-  padding: 0.75rem;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.login-btn:hover:not(:disabled) {
-  background: #0056b3;
-}
-
-.login-btn:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-}
-
-.error-message {
-  color: #dc3545;
+.error-banner {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-lg);
+  background: rgba(252, 165, 165, 0.18);
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
+  font-size: 0.9rem;
+  font-weight: 600;
   text-align: center;
-  margin-top: 1rem;
-  padding: 0.5rem;
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
-  border-radius: 4px;
 }
 
-.register-link {
+.auth-switch {
+  margin-top: 1.75rem;
+  font-size: 0.9rem;
+  color: var(--color-gray-600);
   text-align: center;
-  margin-top: 1.5rem;
-  color: #666;
 }
 
-.register-link a {
-  color: #007bff;
-  text-decoration: none;
+.auth-switch a {
+  font-weight: 600;
 }
 
-.register-link a:hover {
-  text-decoration: underline;
+@media (max-width: 768px) {
+  .auth-hero {
+    padding: 2rem 1.25rem 1.5rem;
+  }
+
+  .hero-title {
+    font-size: 1.9rem;
+  }
+
+  .auth-shell {
+    padding: 0 1.25rem 2.5rem;
+  }
+
+  .auth-card {
+    margin-top: -2.5rem;
+    padding: 1.75rem 1.75rem 2rem;
+  }
 }
 </style>

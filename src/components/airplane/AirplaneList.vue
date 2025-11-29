@@ -3,7 +3,11 @@
     <div class="header">
       <h2>✈️ Fleet Overview</h2>
       <p class="subtitle">Manage your aircraft collection</p>
-      <router-link to="/airplanes/create" class="create-btn">
+      <router-link
+        v-if="canCreateAirplane"
+        to="/airplanes/create"
+        class="create-btn"
+      >
         <span class="plus-icon">+</span>
         Add New Airplane
       </router-link>
@@ -134,7 +138,7 @@
 
         <div class="card-actions">
           <button
-            v-if="!airplane.isDeleted"
+            v-if="!airplane.isDeleted && canUpdateAirplane"
             class="action-btn update-btn"
             @click="handleUpdate(airplane)"
           >
@@ -148,14 +152,14 @@
             👁️ Detail
           </button>
           <button
-            v-if="!airplane.isDeleted"
+            v-if="!airplane.isDeleted && canToggleAirplane"
             class="action-btn delete-btn"
             @click="handleToggleStatus(airplane)"
           >
             🗑️ Deactivate
           </button>
           <button
-            v-if="airplane.isDeleted"
+            v-if="airplane.isDeleted && canToggleAirplane"
             class="action-btn activate-btn"
             @click="handleActivate(airplane)"
           >
@@ -173,10 +177,16 @@ import { useRouter } from 'vue-router'
 import { useAirplaneStore } from '@/stores/airplane/airplane'
 import { useAirlineStore } from '@/stores/airline/airline'
 import type { Airplane } from '@/interfaces/airplane.interface'
+import { canAccess } from '@/lib/rbac'
 
 const router = useRouter()
 const airplaneStore = useAirplaneStore()
 const airlineStore = useAirlineStore()
+
+// RBAC-based capabilities
+const canCreateAirplane = canAccess('airplanes/create')
+const canUpdateAirplane = canAccess('airplanes/update')
+const canToggleAirplane = canAccess('airplanes/delete')
 
 const { airplanes: allAirplanes, loading, error } = airplaneStore
 const { airlines, getAirlineName } = airlineStore
@@ -324,19 +334,16 @@ const handleActivate = async (airplane: Airplane) => {
   transform: translateX(-50%);
   width: 100px;
   height: 4px;
-  background: linear-gradient(135deg, var(--color-pink) 0%, var(--color-orange) 50%, var(--color-red) 100%);
+  background: #F9CDD5;
   border-radius: var(--radius-full);
+  box-shadow: 0 2px 6px rgba(249, 205, 213, 0.6);
 }
 
 .header h2 {
-  font-size: 3rem;
+  font-size: 2.4rem;
   font-weight: 800;
   margin: 0 0 0.5rem 0;
-  background: linear-gradient(135deg, var(--color-pink) 0%, var(--color-orange) 50%, var(--color-red) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #7A8450;
 }
 
 .subtitle {
@@ -350,16 +357,16 @@ const handleActivate = async (airplane: Airplane) => {
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  background: linear-gradient(135deg, var(--color-pink) 0%, var(--color-orange) 100%);
+  background: #7A8450;
   color: white;
   padding: 1rem 2rem;
   border-radius: var(--radius-xl);
   text-decoration: none;
   font-weight: 700;
   font-size: 1.1rem;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 8px 25px rgba(236, 72, 153, 0.3);
-  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(122, 132, 80, 0.4);
+  border: none;
   position: relative;
   overflow: hidden;
 }
@@ -371,13 +378,13 @@ const handleActivate = async (airplane: Airplane) => {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
   transition: left 0.6s;
 }
 
 .create-btn:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 12px 35px rgba(236, 72, 153, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(122, 132, 80, 0.5);
 }
 
 .create-btn:hover::before {
@@ -409,7 +416,7 @@ const handleActivate = async (airplane: Airplane) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(236, 72, 153, 0.02) 0%, rgba(249, 115, 22, 0.02) 100%);
+  background: rgba(249, 205, 213, 0.04);
   pointer-events: none;
 }
 
@@ -499,7 +506,7 @@ const handleActivate = async (airplane: Airplane) => {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(135deg, var(--color-pink) 0%, var(--color-orange) 50%, var(--color-red) 100%);
+  background: #F9CDD5;
   border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
 }
 
@@ -530,13 +537,8 @@ const handleActivate = async (airplane: Airplane) => {
 .airplane-id {
   font-size: 1.75rem;
   font-weight: 800;
-  color: var(--color-gray-900);
+  color: #7A8450;
   margin: 0;
-  background: linear-gradient(135deg, var(--color-pink) 0%, var(--color-orange) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .status-badge {
@@ -690,9 +692,10 @@ const handleActivate = async (airplane: Airplane) => {
 }
 
 .detail-btn {
-  background: linear-gradient(135deg, var(--color-blue) 0%, #3b82f6 100%);
-  color: white;
+  background: var(--color-info);
+  color: #1d4ed8;
   border: 2px solid transparent;
+  box-shadow: 0 2px 8px rgba(147, 197, 253, 0.5);
 }
 
 .detail-btn:hover {

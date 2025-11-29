@@ -47,7 +47,7 @@ interface Props {
   modelValue: string | number
   label?: string
   placeholder?: string
-  type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url'
+  type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'date'
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
   readonly?: boolean

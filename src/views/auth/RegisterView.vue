@@ -1,98 +1,116 @@
 <template>
-  <div class="register-container">
-    <div class="register-card">
-      <h2>Register</h2>
-      <form @submit.prevent="handleRegister" class="register-form">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input
-            id="username"
-            v-model="form.username"
-            type="text"
-            required
-            placeholder="Enter your username"
-          />
-        </div>
+  <div class="auth-page">
 
-        <div class="form-group">
-          <label for="name">Full Name</label>
-          <input
-            id="name"
-            v-model="form.name"
-            type="text"
-            required
-            placeholder="Enter your full name"
-          />
-        </div>
+    <section class="auth-shell">
+      <div class="auth-card">
+        <header class="card-header">
+          <h2>Register</h2>
+        </header>
 
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            id="email"
-            v-model="form.email"
-            type="email"
-            required
-            placeholder="Enter your email"
-          />
-        </div>
+        <form @submit.prevent="handleRegister" class="auth-form">
+          <div class="form-group">
+            <label for="username" class="form-label">Username</label>
+            <input
+              id="username"
+              v-model="form.username"
+              type="text"
+              class="form-input"
+              required
+              placeholder="Choose a username"
+            />
+          </div>
 
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            required
-            placeholder="Enter your password"
-          />
-        </div>
+          <div class="form-group">
+            <label for="name" class="form-label">Full Name</label>
+            <input
+              id="name"
+              v-model="form.name"
+              type="text"
+              class="form-input"
+              required
+              placeholder="Enter your full name"
+            />
+          </div>
 
-        <div class="form-group">
-          <label for="gender">Gender</label>
-          <select id="gender" v-model="form.gender" required>
-            <option value="">Select gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
-        </div>
+          <div class="form-group">
+            <label for="email" class="form-label">Email</label>
+            <input
+              id="email"
+              v-model="form.email"
+              type="email"
+              class="form-input"
+              required
+              placeholder="you@example.com"
+            />
+          </div>
 
-        <div class="form-group">
-          <label for="role">Role</label>
-          <select id="role" v-model="form.role" required>
-            <option value="">Select role</option>
-            <option value="Customer">Customer</option>
-            <option value="Flight Airline">Flight Airline</option>
-            <option value="Superadmin">Superadmin</option>
-          </select>
-        </div>
+          <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input
+              id="password"
+              v-model="form.password"
+              type="password"
+              class="form-input"
+              required
+              placeholder="Create a strong password"
+            />
+          </div>
 
-        <button type="submit" :disabled="isLoading" class="register-btn">
-          {{ isLoading ? 'Registering...' : 'Register' }}
-        </button>
+          <div class="form-group">
+            <label for="gender" class="form-label">Gender</label>
+            <select
+              id="gender"
+              v-model="form.gender"
+              class="form-input"
+              required
+            >
+              <option value="">Select gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
 
-        <div v-if="error" class="error-message">
-          {{ error }}
-        </div>
+          <div class="form-group">
+            <label for="role" class="form-label">Role</label>
+            <select
+              id="role"
+              v-model="form.role"
+              class="form-input"
+              required
+            >
+              <option value="">Select role</option>
+              <option value="Customer">Customer</option>
+              <option value="Flight Airline">Flight Airline</option>
+              <option value="Superadmin">Superadmin</option>
+            </select>
+          </div>
 
-        <div v-if="successMessage" class="success-message">
-          {{ successMessage }}
-        </div>
-      </form>
+          <button type="submit" :disabled="isLoading" class="btn btn-primary auth-btn">
+            {{ isLoading ? 'Registering...' : 'Register' }}
+          </button>
 
-      <p class="login-link">
-        Already have an account?
-        <router-link to="/login">Login here</router-link>
-      </p>
-    </div>
+          <div v-if="error" class="error-banner">
+            {{ error }}
+          </div>
+
+          <div v-if="successMessage" class="success-banner">
+            {{ successMessage }}
+          </div>
+        </form>
+
+        <p class="auth-switch">
+          Already have an account?
+          <router-link to="/login">Login here</router-link>
+        </p>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth/auth'
 
-const router = useRouter()
 const authStore = useAuthStore()
 
 const form = reactive({
@@ -101,7 +119,7 @@ const form = reactive({
   email: '',
   password: '',
   gender: '' as 'Male' | 'Female' | '',
-  role: '' as 'Customer' | 'Flight Airline' | 'Superadmin' | ''
+  role: '' as 'Customer' | 'Flight Airline' | 'Superadmin' | '',
 })
 
 const isLoading = ref(false)
@@ -125,19 +143,18 @@ const handleRegister = async () => {
       email: form.email,
       password: form.password,
       gender: form.gender,
-      role: form.role
+      role: form.role,
     })
 
     if (result.success) {
       successMessage.value = 'Registration successful! You can now login.'
-      // Reset form
       Object.assign(form, {
         username: '',
         name: '',
         email: '',
         password: '',
         gender: '',
-        role: ''
+        role: '',
       })
     } else {
       error.value = result.message || 'Registration failed'
@@ -151,31 +168,72 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-.register-container {
+.auth-page {
+  min-height: 100vh;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-hero {
+  padding: 2.5rem 2rem 2rem;
+  background: #F9CDD5;
+  color: #ffffff;
+}
+
+.hero-content {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.hero-title {
+  margin: 0;
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.hero-subtitle {
+  margin: 0.75rem 0 0;
+  font-size: 1rem;
+  opacity: 0.96;
+}
+
+.auth-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem 3rem;
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: #f5f5f5;
-  padding: 1rem;
 }
 
-.register-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+.auth-card {
+  margin-top: -3rem;
+  background: var(--color-white);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-gray-100);
+  padding: 2.25rem 2.5rem;
+  max-width: 480px;
   width: 100%;
-  max-width: 400px;
 }
 
-.register-card h2 {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: #333;
+.card-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--color-gray-900);
 }
 
-.register-form {
+.card-header p {
+  margin: 0.6rem 0 0;
+  font-size: 0.95rem;
+  color: var(--color-gray-600);
+}
+
+.auth-form {
+  margin-top: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -184,82 +242,89 @@ const handleRegister = async () => {
 .form-group {
   display: flex;
   flex-direction: column;
+  gap: 0.4rem;
 }
 
-.form-group label {
-  margin-bottom: 0.5rem;
+.form-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-gray-700);
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--color-gray-200);
+  background: var(--color-white);
+  font-size: 0.95rem;
   font-weight: 500;
-  color: #555;
+  color: var(--color-gray-800);
+  transition: all 0.2s ease;
 }
 
-.form-group input,
-.form-group select {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.form-group input:focus,
-.form-group select:focus {
+.form-input:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(249, 205, 213, 0.2);
 }
 
-.register-btn {
-  padding: 0.75rem;
-  background: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
+.auth-btn {
+  width: 100%;
+  margin-top: 0.25rem;
 }
 
-.register-btn:hover:not(:disabled) {
-  background: #218838;
-}
-
-.register-btn:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-}
-
-.error-message {
-  color: #dc3545;
+.error-banner {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-lg);
+  background: rgba(252, 165, 165, 0.18);
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
+  font-size: 0.9rem;
+  font-weight: 600;
   text-align: center;
-  margin-top: 1rem;
-  padding: 0.5rem;
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
-  border-radius: 4px;
 }
 
-.success-message {
-  color: #155724;
+.success-banner {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-lg);
+  background: rgba(110, 231, 183, 0.15);
+  border: 1px solid #10b981;
+  color: #047857;
+  font-size: 0.9rem;
+  font-weight: 600;
   text-align: center;
-  margin-top: 1rem;
-  padding: 0.5rem;
-  background: #d4edda;
-  border: 1px solid #c3e6cb;
-  border-radius: 4px;
 }
 
-.login-link {
+.auth-switch {
+  margin-top: 1.75rem;
+  font-size: 0.9rem;
+  color: var(--color-gray-600);
   text-align: center;
-  margin-top: 1.5rem;
-  color: #666;
 }
 
-.login-link a {
-  color: #007bff;
-  text-decoration: none;
+.auth-switch a {
+  font-weight: 600;
 }
 
-.login-link a:hover {
-  text-decoration: underline;
+@media (max-width: 768px) {
+  .auth-hero {
+    padding: 2rem 1.25rem 1.5rem;
+  }
+
+  .hero-title {
+    font-size: 1.9rem;
+  }
+
+  .auth-shell {
+    padding: 0 1.25rem 2.5rem;
+  }
+
+  .auth-card {
+    margin-top: -2.5rem;
+    padding: 1.75rem 1.75rem 2rem;
+  }
 }
 </style>

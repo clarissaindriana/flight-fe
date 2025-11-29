@@ -2,7 +2,12 @@
   <div class="booking-list">
     <div class="list-header">
       <h2>Flight Bookings</h2>
-      <VButton @click="$emit('create')">Create Booking</VButton>
+      <VButton
+        v-if="canCreateBooking"
+        @click="$emit('create')"
+      >
+        Create Booking
+      </VButton>
     </div>
 
     <div v-if="loading" class="loading">Loading bookings...</div>
@@ -51,7 +56,7 @@
             View Details
           </VButton>
           <VButton
-            v-if="canUpdate(booking)"
+            v-if="canUpdateBooking && canUpdate(booking)"
             size="sm"
             variant="primary"
             @click.stop="$emit('update', booking.id)"
@@ -59,7 +64,7 @@
             Update
           </VButton>
           <VButton
-            v-if="canCancel(booking)"
+            v-if="canCancelBooking && canCancel(booking)"
             size="sm"
             variant="danger"
             @click.stop="$emit('cancel', booking.id)"
@@ -78,6 +83,7 @@ import VButton from '@/components/common/VButton.vue'
 import { useBookingStore } from '@/stores/booking/booking'
 import { useFlightStore } from '@/stores/flight/flight'
 import type { Booking } from '@/interfaces/booking.interface'
+import { canAccess } from '@/lib/rbac'
 
 interface Props {
   flightId?: string
@@ -95,6 +101,10 @@ const emit = defineEmits<{
 
 const bookingStore = useBookingStore()
 const flightStore = useFlightStore()
+
+const canCreateBooking = canAccess('bookings/create')
+const canUpdateBooking = canAccess('bookings/update')
+const canCancelBooking = canAccess('bookings/cancel')
 
 const bookings = computed(() => {
   // Base list (optionally filtered by flight)
@@ -168,41 +178,58 @@ const canCancel = (booking: Booking): boolean => {
 
 <style scoped>
 .booking-list {
-  padding: 2rem;
+  padding: 2rem 0 2.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  padding: 0 2rem;
 }
-
 .list-header h2 {
   margin: 0;
-  color: var(--color-gray-800);
+  color: var(--color-gray-900);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
+
 
 .bookings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 1.5rem;
+  padding: 0 2rem;
 }
 
 .booking-card {
   background: var(--color-white);
   border: 1px solid var(--color-gray-200);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  border-radius: var(--radius-2xl);
+  padding: 1.5rem 1.75rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+.booking-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border-top: 4px solid #F9CDD5;
+  pointer-events: none;
 }
 
 .booking-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--shadow-md);
-  border-color: var(--color-pink);
+  border-color: #F9CDD5;
 }
 
 .booking-header {
@@ -214,16 +241,18 @@ const canCancel = (booking: Booking): boolean => {
 
 .booking-header h3 {
   margin: 0;
-  font-size: 1.1rem;
-  color: var(--color-gray-800);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #7A8450;
 }
 
 .status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--radius-md);
-  font-size: 0.875rem;
-  font-weight: 600;
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .status-unpaid {
@@ -252,15 +281,18 @@ const canCancel = (booking: Booking): boolean => {
 }
 
 .booking-info p {
-  margin: 0.5rem 0;
+  margin: 0.35rem 0;
   color: var(--color-gray-700);
   font-size: 0.9rem;
+}
+.booking-info p strong {
+  color: var(--color-gray-800);
 }
 
 .booking-actions {
   display: flex;
   gap: 0.5rem;
-  margin-top: 1rem;
+  margin-top: 1.25rem;
   padding-top: 1rem;
   border-top: 1px solid var(--color-gray-200);
 }

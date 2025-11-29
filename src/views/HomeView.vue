@@ -1,49 +1,122 @@
 <template>
   <div class="home-view">
+    <!-- Welcome Header -->
+    <header class="dashboard-header">
+      <div class="header-content">
+        <h1 class="header-title">Dashboard Overview</h1>
+        <p class="header-subtitle">Welcome back! Here's what's happening today</p>
+      </div>
+      <button class="refresh-btn-header" @click="reloadAll" :disabled="loading">
+        <svg v-if="!loading" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+        </svg>
+        <span v-if="loading" class="spinner-small"></span>
+        <span>{{ loading ? 'Refreshing...' : 'Refresh' }}</span>
+      </button>
+    </header>
+
+    <!-- Stats Cards -->
     <section class="stats-cards">
-      <div class="card">
-        <div class="card-title">Active Flights Today</div>
-        <div class="card-value">{{ activeFlightsToday }}</div>
-        <div class="card-sub">Status: Scheduled or In Flight</div>
+      <div class="stat-card card-flights">
+        <div class="stat-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">Active Flights</div>
+          <div class="stat-value">{{ activeFlightsToday }}</div>
+          <div class="stat-description">Scheduled or In Flight today</div>
+        </div>
+        <div class="stat-badge badge-primary">Today</div>
       </div>
-      <div class="card">
-        <div class="card-title">Bookings Created Today</div>
-        <div class="card-value">{{ bookingsToday }}</div>
-        <div class="card-sub">All statuses</div>
+
+      <div class="stat-card card-bookings" v-if="canSeeBookingStatistics">
+        <div class="stat-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">Bookings Created</div>
+          <div class="stat-value">{{ bookingsToday }}</div>
+          <div class="stat-description">All statuses included</div>
+        </div>
+        <div class="stat-badge badge-secondary">Today</div>
       </div>
-      <div class="card">
-        <div class="card-title">Registered Airlines</div>
-        <div class="card-value">{{ airlinesCount }}</div>
-        <div class="card-sub">Total airlines</div>
+
+      <div class="stat-card card-airlines" v-if="canSeeAirlineStats">
+        <div class="stat-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+            <path d="M2 12h20"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">Airlines</div>
+          <div class="stat-value">{{ airlinesCount }}</div>
+          <div class="stat-description">Total registered airlines</div>
+        </div>
+        <div class="stat-badge badge-accent">Active</div>
       </div>
     </section>
 
-    <section class="chart-section">
-      <div class="section-header">
-        <h2>Booking Statistics per Period</h2>
-        <p>Bar chart shows potential revenue per Flight (Paid + Unpaid)</p>
+    <!-- Chart Section -->
+    <section class="chart-section" v-if="canSeeBookingStatistics">
+      <div class="chart-header">
+        <div class="chart-title-group">
+          <h2 class="chart-title">Revenue Analytics</h2>
+          <p class="chart-subtitle">Booking statistics and potential revenue per flight</p>
+        </div>
+        
+        <div class="chart-filters">
+          <div class="filter-group">
+            <label class="filter-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              <span>Start Date</span>
+            </label>
+            <input type="date" class="filter-input" v-model="startDate" @change="reloadStats" />
+          </div>
+          
+          <div class="filter-group">
+            <label class="filter-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              <span>End Date</span>
+            </label>
+            <input type="date" class="filter-input" v-model="endDate" @change="reloadStats" />
+          </div>
+        </div>
       </div>
 
-      <div class="filters">
-        <label class="filter">
-          <span>Start Date</span>
-          <input type="date" v-model="startDate" @change="reloadStats" />
-        </label>
-        <label class="filter">
-          <span>End Date</span>
-          <input type="date" v-model="endDate" @change="reloadStats" />
-        </label>
-        <button class="refresh-btn" @click="reloadAll" :disabled="loading">
-          {{ loading ? 'Loading...' : 'Refresh' }}
-        </button>
-      </div>
-
-      <div class="chart-wrapper">
+      <div class="chart-container">
+        <div v-if="loading" class="chart-loading">
+          <div class="spinner"></div>
+          <p>Loading analytics...</p>
+        </div>
         <canvas ref="chartRef" height="140"></canvas>
       </div>
 
-      <div v-if="error" class="error">
-        {{ error }}
+      <div v-if="error" class="error-message">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ error }}</span>
       </div>
     </section>
   </div>
@@ -57,9 +130,13 @@ import { airlineService } from '@/services/airline.service'
 import type { Booking } from '@/interfaces/booking.interface'
 import type { Flight } from '@/interfaces/flight.interface'
 import type { Airline } from '@/interfaces/airline.interface'
+import { canAccess } from '@/lib/rbac'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
+
+const canSeeBookingStatistics = canAccess('bookings/statistics')
+const canSeeAirlineStats = canAccess('airlines')
 
 const activeFlightsToday = ref(0)
 const bookingsToday = ref(0)
@@ -107,7 +184,7 @@ async function loadCounts() {
     return isSameLocalDate(dep, todayDate)
   }).length
 
-  // Bookings
+  // Bookings (allowed for Customer, Superadmin, and Flight Airline)
   const bookingsResp = await bookingService.getAllBookings({ includeDeleted: false })
   const bookings: Booking[] = bookingsResp.data
   bookingsToday.value = bookings.filter(b => {
@@ -115,12 +192,18 @@ async function loadCounts() {
     return isSameLocalDate(created, todayDate)
   }).length
 
-  // Airlines
-  const airlines: Airline[] = await airlineService.getAllAirlines()
-  airlinesCount.value = airlines.length
+  // Airlines (only call API for roles that can manage airlines)
+  if (canSeeAirlineStats) {
+    const airlines: Airline[] = await airlineService.getAllAirlines()
+    airlinesCount.value = airlines.length
+  } else {
+    airlinesCount.value = 0
+  }
 }
 
 async function loadChart() {
+  if (!canSeeBookingStatistics) return
+
   const Chart = await ensureChartJs()
 
   const resp = await bookingService.getStatistics(startDate.value, endDate.value)
@@ -145,42 +228,129 @@ async function loadChart() {
         {
           label: 'Total Revenue',
           data: revenue,
-          backgroundColor: 'rgba(236, 72, 153, 0.6)',
-          borderColor: 'rgba(236, 72, 153, 1)',
-          borderWidth: 1,
+          backgroundColor: 'rgba(249, 205, 213, 0.7)',
+          borderColor: 'rgba(245, 179, 193, 1)',
+          borderWidth: 2,
+          borderRadius: 8,
           yAxisID: 'y',
         },
         {
           label: 'Bookings Count',
           data: bookingsCount,
-          backgroundColor: 'rgba(59, 130, 246, 0.4)',
-          borderColor: 'rgba(59, 130, 246, 1)',
-          borderWidth: 1,
+          backgroundColor: 'rgba(122, 132, 80, 0.6)',
+          borderColor: 'rgba(95, 106, 62, 1)',
+          borderWidth: 2,
+          borderRadius: 8,
           yAxisID: 'y1',
         },
       ],
     },
     options: {
       responsive: true,
+      maintainAspectRatio: true,
       interaction: { mode: 'index' as const, intersect: false },
       stacked: false,
       plugins: {
-        legend: { position: 'top' as const },
-        title: { display: true, text: `Period: ${startDate.value} to ${endDate.value}` },
+        legend: {
+          position: 'top' as const,
+          labels: {
+            usePointStyle: true,
+            padding: 20,
+            font: {
+              size: 13,
+              weight: '600',
+              family: 'Inter, sans-serif'
+            }
+          }
+        },
+        title: {
+          display: true,
+          text: `Period: ${startDate.value} to ${endDate.value}`,
+          font: {
+            size: 15,
+            weight: '700',
+            family: 'Inter, sans-serif'
+          },
+          padding: {
+            top: 10,
+            bottom: 20
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          titleColor: '#18181b',
+          bodyColor: '#52525b',
+          borderColor: '#e4e4e7',
+          borderWidth: 1,
+          padding: 12,
+          boxPadding: 6,
+          usePointStyle: true,
+          titleFont: {
+            size: 14,
+            weight: '700'
+          },
+          bodyFont: {
+            size: 13,
+            weight: '600'
+          }
+        }
       },
       scales: {
         y: {
           type: 'linear' as const,
           position: 'left' as const,
-          title: { display: true, text: 'Revenue' },
-          ticks: { callback: (v: any) => `\$${Number(v).toLocaleString()}` },
+          title: {
+            display: true,
+            text: 'Revenue',
+            font: {
+              size: 13,
+              weight: '700',
+              family: 'Inter, sans-serif'
+            }
+          },
+          ticks: {
+            callback: (v: any) => `$${Number(v).toLocaleString()}`,
+            font: {
+              size: 12,
+              weight: '600'
+            }
+          },
+          grid: {
+            color: 'rgba(0, 0, 0, 0.05)',
+            drawBorder: false
+          }
         },
         y1: {
           type: 'linear' as const,
           position: 'right' as const,
           grid: { drawOnChartArea: false },
-          title: { display: true, text: 'Bookings' },
+          title: {
+            display: true,
+            text: 'Bookings',
+            font: {
+              size: 13,
+              weight: '700',
+              family: 'Inter, sans-serif'
+            }
+          },
+          ticks: {
+            font: {
+              size: 12,
+              weight: '600'
+            }
+          }
         },
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            font: {
+              size: 12,
+              weight: '600'
+            }
+          }
+        }
       },
     },
   })
@@ -221,102 +391,481 @@ onMounted(async () => {
 <style scoped>
 .home-view {
   min-height: 100vh;
-  background: var(--color-off-white, #fafafa);
-  padding: 1.5rem;
+  padding: 0;
+  max-width: 100%;
+  margin: 0 auto;
+  animation: fadeIn 0.6s ease-out;
+  background: #ffffff;
 }
 
-/* Cards */
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+/* Dashboard Header */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3rem 2rem;
+  background: #F9CDD5;
+  margin-bottom: 0;
 }
-.card {
-  background: var(--color-white, #fff);
-  border: 1px solid var(--color-gray-100, #eee);
-  border-radius: var(--radius-xl, 16px);
-  padding: 1.25rem 1.5rem;
-  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.05));
+
+.header-content {
+  flex: 1;
 }
-.card-title {
-  color: var(--color-gray-600, #666);
-  font-weight: 700;
+
+.header-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ffffff;
   margin-bottom: 0.5rem;
-}
-.card-value {
-  font-size: 2rem;
-  font-weight: 900;
-  color: var(--color-gray-900, #111);
-}
-.card-sub {
-  margin-top: 0.25rem;
-  font-size: 0.9rem;
-  color: var(--color-gray-500, #777);
+  letter-spacing: -0.02em;
 }
 
-/* Chart section */
-.chart-section {
-  background: var(--color-white, #fff);
-  border: 1px solid var(--color-gray-100, #eee);
-  border-radius: var(--radius-xl, 16px);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.05));
+.header-subtitle {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.1rem;
+  font-weight: 500;
 }
-.section-header h2 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.5rem;
-  font-weight: 800;
-}
-.section-header p {
-  margin: 0 0 1rem 0;
-  color: var(--color-gray-600, #666);
-}
-.filters {
-  display: flex;
-  align-items: flex-end;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-.filter {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  font-weight: 600;
-  color: var(--color-gray-700, #555);
-}
-.filter input[type="date"] {
-  padding: 0.5rem 0.75rem;
-  border: 2px solid var(--color-gray-200, #e5e7eb);
-  border-radius: 10px;
-  font-weight: 600;
-  background: var(--color-white, #fff);
-}
-.refresh-btn {
-  padding: 0.6rem 1rem;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--color-pink, #ec4899) 0%, var(--color-orange, #f97316) 100%);
+
+.refresh-btn-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  background: rgba(255, 255, 255, 0.2);
   color: white;
-  font-weight: 800;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-lg);
+  font-weight: 700;
+  font-size: 0.95rem;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(236,72,153,0.25);
+  transition: all var(--transition-base);
+  backdrop-filter: blur(10px);
 }
-.refresh-btn:disabled {
+
+.refresh-btn-header:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.refresh-btn-header:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
 
-.chart-wrapper {
-  position: relative;
-  width: 100%;
-  overflow-x: auto;
+.refresh-btn-header svg {
+  animation: rotate 2s linear infinite;
 }
 
-.error {
-  margin-top: 1rem;
-  color: var(--color-red, #ef4444);
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Stats Cards */
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto 2rem;
+}
+
+.stat-card {
+  position: relative;
+  background: var(--color-white);
+  border-radius: var(--radius-2xl);
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-gray-100);
+  transition: all var(--transition-base);
+  overflow: hidden;
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--color-primary);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-icon {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+}
+
+.card-flights .stat-icon {
+  background: linear-gradient(135deg, rgba(249, 205, 213, 0.2) 0%, rgba(249, 205, 213, 0.05) 100%);
+  color: var(--color-primary-strong);
+}
+
+.card-bookings .stat-icon {
+  background: linear-gradient(135deg, rgba(122, 132, 80, 0.2) 0%, rgba(122, 132, 80, 0.05) 100%);
+  color: var(--color-secondary-strong);
+}
+
+.card-airlines .stat-icon {
+  background: rgba(122, 132, 80, 0.12);
+  color: var(--color-secondary);
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--color-gray-900);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.stat-description {
+  font-size: 0.9rem;
+  color: var(--color-gray-500);
+  font-weight: 500;
+}
+
+.stat-badge {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-primary {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.badge-secondary {
+  background: var(--color-secondary-soft);
+  color: var(--color-secondary-strong);
+}
+
+.badge-accent {
+  background: var(--color-secondary-soft);
+  color: var(--color-secondary-strong);
+}
+
+/* Chart Section */
+.chart-section {
+  background: var(--color-white);
+  border-radius: var(--radius-2xl);
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-gray-100);
+  transition: all var(--transition-base);
+  max-width: 1400px;
+  margin: 0 auto 2rem;
+  margin-left: 2rem;
+  margin-right: 2rem;
+}
+
+.chart-section:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.chart-title-group {
+  flex: 1;
+  min-width: 250px;
+}
+
+.chart-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-gray-900);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.chart-subtitle {
+  color: var(--color-gray-600);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.chart-filters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-gray-700);
+}
+
+.filter-label svg {
+  color: var(--color-primary);
+}
+
+.filter-input {
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: var(--color-white);
+  color: var(--color-gray-800);
+  transition: all var(--transition-base);
+  min-width: 160px;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(249, 205, 213, 0.15);
+}
+
+.chart-container {
+  position: relative;
+  width: 100%;
+  min-height: 400px;
+  padding: 1rem;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-xl);
+}
+
+.chart-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  z-index: 10;
+}
+
+.chart-loading p {
+  color: var(--color-gray-600);
+  font-weight: 600;
+}
+
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid var(--color-gray-200);
+  border-radius: 50%;
+  border-top-color: var(--color-primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--color-error-light);
+  border-left: 4px solid var(--color-error);
+  border-radius: var(--radius-lg);
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+.error-message svg {
+  flex-shrink: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .dashboard-header {
+    padding: 2rem 1.5rem;
+  }
+
+  .header-title {
+    font-size: 2rem;
+  }
+
+  .stats-cards {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+
+  .stat-card {
+    padding: 1.5rem;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+  }
+
+  .chart-section {
+    margin-left: 1.5rem;
+    margin-right: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 2rem 1rem;
+  }
+
+  .header-title {
+    font-size: 1.75rem;
+  }
+
+  .header-subtitle {
+    font-size: 1rem;
+  }
+
+  .refresh-btn-header {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stats-cards {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .stat-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .stat-badge {
+    position: static;
+    display: inline-block;
+    margin-top: 1rem;
+  }
+
+  .chart-section {
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+
+  .chart-header {
+    flex-direction: column;
+  }
+
+  .chart-filters {
+    width: 100%;
+  }
+
+  .filter-group {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .filter-input {
+    width: 100%;
+  }
+
+  .chart-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-icon {
+    width: 56px;
+    height: 56px;
+  }
+
+  .stat-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+  }
 }
 </style>

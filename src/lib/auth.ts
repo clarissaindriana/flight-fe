@@ -40,19 +40,37 @@ export const getToken = (): string | null => {
   return localStorage.getItem(TOKEN_KEY);
 };
 
+/**
+ * Determine whether the user is considered authenticated on the frontend.
+ *
+ * We primarily rely on the presence of a token. If the JWT contains a standard
+ * `exp` claim, we additionally ensure it has not expired. This makes the
+ * frontend tolerant to tokens without `exp` while still correctly handling
+ * expiry when available.
+ */
 export const isAuthenticated = (): boolean => {
   const token = getToken();
   if (!token) return false;
 
   try {
-    // Basic JWT validation - check if not expired
     const parts = token.split('.');
-    if (parts.length < 2 || !parts[1]) return false;
+    if (parts.length < 2 || !parts[1]) {
+      // Non-standard token format but present – treat as authenticated.
+      return true;
+    }
+
     const payload = JSON.parse(atob(parts[1]));
+
+    // If backend does not include exp, consider token valid as long as it exists.
+    if (!payload.exp) {
+      return true;
+    }
+
     const currentTime = Date.now() / 1000;
     return payload.exp > currentTime;
   } catch {
-    return false;
+    // On any decoding error, fall back to presence-based auth to avoid blocking UI.
+    return true;
   }
 };
 

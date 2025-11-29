@@ -1,8 +1,17 @@
 <template>
   <div class="create-booking-form" :class="lockedPassengers ? 'variant-return' : 'variant-departure'">
-    <h2>{{ lockedPassengers ? 'Create Return Flight Booking' : 'Create Departure Flight Booking' }}</h2>
-    <div class="step-banner" :class="lockedPassengers ? 'return' : 'departure'">
-      {{ lockedPassengers ? 'Step 2/2 • Return Flight' : 'Step 1/2 • Departure Flight' }}
+    <div class="form-header">
+      <div class="title-group">
+        <h2 class="title">
+          {{ lockedPassengers ? 'Create Return Booking' : 'Create Booking' }}
+        </h2>
+        <p class="subtitle">
+          {{ lockedPassengers ? 'Same passengers, different flight' : 'Enter passenger and contact details for this flight' }}
+        </p>
+      </div>
+      <div class="step-banner" :class="lockedPassengers ? 'return' : 'departure'">
+        {{ lockedPassengers ? 'Step 2 of 2 • Return Flight' : 'Step 1 of 2 • Departure Flight' }}
+      </div>
     </div>
 
     <form @submit.prevent="handleSubmit" class="booking-form">
@@ -56,7 +65,7 @@
         />
         <VInput
           v-model="formData.contactPhone"
-          label="Phone"
+          label="Phone Number"
           type="tel"
           placeholder="Enter contact phone"
           required
@@ -66,7 +75,13 @@
 
       <!-- Passengers -->
       <div class="form-section">
-        <h3>Passengers</h3>
+        <div class="section-header">
+          <h3>Passenger Details</h3>
+          <p class="section-subtitle">
+            Each passenger will be created with the details you provide here.
+          </p>
+        </div>
+
         <VInput
           v-model.number="formData.passengerCount"
           label="Number of Passengers"
@@ -77,20 +92,54 @@
           :error="errors.passengerCount"
         />
 
-        <div v-for="(passenger, index) in formData.passengers" :key="index" class="passenger-card">
-          <h4>Passenger {{ index + 1 }}</h4>
-          <VSelect
-            v-model="passenger.passengerId"
-            label="Select Passenger"
-            placeholder="Choose from existing passengers"
-            :options="passengerOptions"
-            required
-            :disabled="lockedPassengers"
-            :error="errors.passengers?.[index]?.passengerId"
-          />
+        <div
+          v-for="(passenger, index) in formData.passengers"
+          :key="index"
+          class="passenger-card"
+        >
+          <div class="passenger-header">
+            <h4>Passenger {{ index + 1 }}</h4>
+            <span v-if="lockedPassengers" class="badge-locked">Locked from previous step</span>
+          </div>
+
+          <div class="passenger-grid">
+            <VInput
+              v-model="passenger.fullName"
+              label="Full Name"
+              placeholder="Enter full name"
+              :disabled="lockedPassengers"
+              :error="errors.passengers?.[index]?.fullName"
+            />
+            <VInput
+              v-model="passenger.birthDate"
+              label="Birth Date"
+              type="date"
+              :disabled="lockedPassengers"
+              :error="errors.passengers?.[index]?.birthDate"
+            />
+          </div>
+
+          <div class="passenger-grid">
+            <VSelect
+              v-model="passenger.gender"
+              label="Gender"
+              placeholder="Select gender"
+              :options="genderOptions"
+              :disabled="lockedPassengers"
+              :error="errors.passengers?.[index]?.gender"
+            />
+            <VInput
+              v-model="passenger.idPassport"
+              label="ID / Passport Number"
+              placeholder="Enter ID or passport number"
+              :disabled="lockedPassengers"
+              :error="errors.passengers?.[index]?.idPassport"
+            />
+          </div>
+
           <VSelect
             v-model="passenger.seatId"
-            label="Seat"
+            label="Seat (optional)"
             placeholder="Select seat"
             :options="seatOptionsFor(index)"
             :error="errors.passengers?.[index]?.seatId"
@@ -119,7 +168,6 @@ import VButton from '@/components/common/VButton.vue'
 import { useFlightStore } from '@/stores/flight/flight'
 import { useClassFlightStore } from '@/stores/classFlight/classflight'
 import { useSeatStore } from '@/stores/seat/seat'
-import { usePassengerStore } from '@/stores/passenger/passenger'
 import { useAirlineStore } from '@/stores/airline/airline'
 import { useAirportStore } from '@/stores/airport/airport'
 import type { AddBookingRequest } from '@/interfaces/booking.interface'
@@ -128,26 +176,41 @@ import type { AddPassengerRequest } from '@/interfaces/passenger.interface'
 interface Props {
   flightId?: string
   classFlightId?: number
-  prefillPassengers?: string[]
+  prefillPassengersData?: AddPassengerRequest[]
   prefillContact?: { contactEmail?: string; contactPhone?: string }
 }
 
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  submit: [bookingData: AddBookingRequest, selectedPassengerIds: string[]]
+  submit: [bookingData: AddBookingRequest, passengersSnapshot: AddPassengerRequest[]]
   cancel: []
 }>()
 
 const flightStore = useFlightStore()
 const classFlightStore = useClassFlightStore()
 const seatStore = useSeatStore()
-const passengerStore = usePassengerStore()
 const airlineStore = useAirlineStore()
 const airportStore = useAirportStore()
 
 const loading = ref(false)
 const errors = ref<Record<string, any>>({})
+
+type PassengerForm = {
+  fullName: string
+  birthDate: string
+  gender: number | null
+  idPassport: string
+  seatId?: number | undefined
+}
+
+const makeEmptyPassenger = (): PassengerForm => ({
+  fullName: '',
+  birthDate: '',
+  gender: null,
+  idPassport: '',
+  seatId: undefined,
+})
 
 const formData = ref({
   flightId: props.flightId || '',
@@ -155,42 +218,36 @@ const formData = ref({
   contactEmail: '',
   contactPhone: '',
   passengerCount: 1,
-  passengers: [{
-    passengerId: '',
-    seatId: undefined
-  }]
+  passengers: [makeEmptyPassenger()],
 } as any)
 
 const genderOptions = [
   { value: 1, label: 'Male' },
   { value: 2, label: 'Female' },
-  { value: 3, label: 'Other' }
+  { value: 3, label: 'Other' },
 ]
-
-const passengerOptions = computed(() =>
-  passengerStore.passengers.map(passenger => ({
-    value: passenger.id,
-    label: `${passenger.fullName} (${passenger.idPassport})`
-  }))
-)
 
 const flightOptions = computed(() =>
   flightStore.flights
     .filter(flight => flight.status === 1) // Only scheduled flights
     .map(flight => ({
       value: flight.id,
-      label: `${flight.id} - ${flight.originAirportCode} to ${flight.destinationAirportCode}`
-    }))
+      label: `${flight.id} - ${flight.originAirportCode} to ${flight.destinationAirportCode}`,
+    })),
 )
 
-// Lock flight selection when navigated from Flight view
 const lockedFlight = computed(() => !!props.flightId)
-// When prefilledPassengers is provided (round-trip step 2), lock passenger selection
-const lockedPassengers = computed(() => Array.isArray(props.prefillPassengers) && props.prefillPassengers.length > 0)
+const lockedPassengers = computed(() =>
+  Array.isArray(props.prefillPassengersData) && props.prefillPassengersData.length > 0,
+)
 
 const fmtDT = (iso?: string) => {
   if (!iso) return ''
-  try { return new Date(iso).toLocaleString() } catch { return String(iso) }
+  try {
+    return new Date(iso).toLocaleString()
+  } catch {
+    return String(iso)
+  }
 }
 
 const selectedFlight = computed(() => {
@@ -224,11 +281,10 @@ const scheduleSummary = computed(() => {
 const classFlightOptions = computed(() => {
   if (!formData.value.flightId) return []
   const classFlights = classFlightStore.byFlight[formData.value.flightId] || []
-  return classFlights
-    .map(cf => ({
-      value: cf.id,
-      label: `${cf.classType}`
-    }))
+  return classFlights.map(cf => ({
+    value: cf.id,
+    label: `${cf.classType}`,
+  }))
 })
 
 /**
@@ -242,9 +298,9 @@ const seatOptionsFor = (rowIndex: number) => {
 
   const selectedByOthers = new Set(
     (formData.value.passengers || [])
-      .map((p: any, idx: number) => (idx === rowIndex ? undefined : p.seatId))
+      .map((p: PassengerForm, idx: number) => (idx === rowIndex ? undefined : p.seatId))
       .filter((id: any) => id !== undefined)
-      .map((id: any) => Number(id))
+      .map((id: any) => Number(id)),
   )
 
   const currentSeatId = Number((formData.value.passengers?.[rowIndex]?.seatId) ?? NaN)
@@ -258,7 +314,7 @@ const seatOptionsFor = (rowIndex: number) => {
     })
     .map(seat => ({
       value: seat.id,
-      label: seat.seatCode
+      label: seat.seatCode,
     }))
 }
 
@@ -269,13 +325,13 @@ const isFormValid = computed(() => {
     !!formData.value.contactEmail &&
     !!formData.value.contactPhone &&
     formData.value.passengers.length === formData.value.passengerCount &&
-    formData.value.passengers.every((p: any) => !!p.passengerId)
+    formData.value.passengers.every((p: PassengerForm) => !!p.fullName && !!p.birthDate && p.gender != null && !!p.idPassport)
 
   if (!baseOk) return false
 
   // Seats optional. But if any is chosen:
   const seatIds = formData.value.passengers
-    .map((p: any) => p.seatId)
+    .map((p: PassengerForm) => p.seatId)
     .filter((id: any) => id !== undefined)
     .map((id: any) => Number(id))
 
@@ -296,20 +352,23 @@ const isFormValid = computed(() => {
 const updatePassengerCount = () => {}
 
 // Keep passengers array strictly in sync with passengerCount to avoid overshoot (e.g., duplicate input events)
-watch(() => formData.value.passengerCount, (val) => {
-  let count = Number(val) || 1
-  if (count < 1) count = 1
-  if (count > 10) count = 10
-  if (count !== formData.value.passengerCount) {
-    formData.value.passengerCount = count
-  }
-  while (formData.value.passengers.length < count) {
-    formData.value.passengers.push({ passengerId: '', seatId: undefined })
-  }
-  if (formData.value.passengers.length > count) {
-    formData.value.passengers.splice(count)
-  }
-})
+watch(
+  () => formData.value.passengerCount,
+  (val) => {
+    let count = Number(val) || 1
+    if (count < 1) count = 1
+    if (count > 10) count = 10
+    if (count !== formData.value.passengerCount) {
+      formData.value.passengerCount = count
+    }
+    while (formData.value.passengers.length < count) {
+      formData.value.passengers.push(makeEmptyPassenger())
+    }
+    if (formData.value.passengers.length > count) {
+      formData.value.passengers.splice(count)
+    }
+  },
+)
 
 const validateForm = (): boolean => {
   errors.value = {}
@@ -336,28 +395,36 @@ const validateForm = (): boolean => {
     errors.value.passengerCount = 'Passenger count must be between 1 and 10'
   }
 
-  // Validate passenger selections
-  formData.value.passengers.forEach((passenger: any, index: number) => {
-    if (!passenger.passengerId) {
+  // Validate passenger fields
+  formData.value.passengers.forEach((p: PassengerForm, index: number) => {
+    const perr: any = {}
+    if (!p.fullName) perr.fullName = 'Full name is required'
+    if (!p.birthDate) perr.birthDate = 'Birth date is required'
+    if (p.gender == null) perr.gender = 'Gender is required'
+    if (!p.idPassport) perr.idPassport = 'ID/Passport is required'
+    if (Object.keys(perr).length > 0) {
       if (!errors.value.passengers) errors.value.passengers = []
-      errors.value.passengers[index] = { ...(errors.value.passengers[index] || {}), passengerId: 'Passenger selection is required' }
+      errors.value.passengers[index] = { ...(errors.value.passengers[index] || {}), ...perr }
     }
   })
 
   // If any seat is selected, require seat for all selected passengers
-  const anySeatSelected = formData.value.passengers.some((p: any) => p.seatId !== undefined)
+  const anySeatSelected = formData.value.passengers.some((p: PassengerForm) => p.seatId !== undefined)
   if (anySeatSelected) {
-    formData.value.passengers.forEach((p: any, index: number) => {
+    formData.value.passengers.forEach((p: PassengerForm, index: number) => {
       if (p.seatId === undefined) {
         if (!errors.value.passengers) errors.value.passengers = []
-        errors.value.passengers[index] = { ...(errors.value.passengers[index] || {}), seatId: 'Seat is required when any seats are selected' }
+        errors.value.passengers[index] = {
+          ...(errors.value.passengers[index] || {}),
+          seatId: 'Seat is required when any seats are selected',
+        }
       }
     })
   }
 
   // Enforce unique seat selection across all passengers
   const seatIds: number[] = formData.value.passengers
-    .map((p: any) => p.seatId)
+    .map((p: PassengerForm) => p.seatId)
     .filter((id: any) => id !== undefined)
     .map((id: any) => Number(id))
 
@@ -368,16 +435,22 @@ const validateForm = (): boolean => {
     seen.set(id, arr)
   })
   // Mark duplicates with errors
-  for (const [id, idxs] of seen.entries()) {
+  for (const [, idxs] of seen.entries()) {
     if (idxs.length > 1) {
       if (!errors.value.passengers) errors.value.passengers = []
       idxs.forEach(i => {
-        errors.value.passengers[i] = { ...(errors.value.passengers[i] || {}), seatId: 'Duplicate seat selected' }
+        errors.value.passengers[i] = {
+          ...(errors.value.passengers[i] || {}),
+          seatId: 'Duplicate seat selected',
+        }
       })
     }
   }
 
-  const hasPassengerErrors = !!(errors.value.passengers && errors.value.passengers.some((e: any) => e && (e.passengerId || e.seatId)))
+  const hasPassengerErrors = !!(
+    errors.value.passengers &&
+    errors.value.passengers.some((e: any) => e && (e.fullName || e.birthDate || e.gender || e.idPassport || e.seatId))
+  )
   return Object.keys(errors.value).length === 0 && !hasPassengerErrors
 }
 
@@ -387,34 +460,31 @@ const handleSubmit = async () => {
   loading.value = true
   try {
     const seatIds = (formData.value.passengers
-      .map((p: any) => p.seatId)
+      .map((p: PassengerForm) => p.seatId)
       .filter((id: any) => id !== undefined)
       .map((id: any) => Number(id))) as number[]
 
     if (seatIds.length > 0 && seatIds.length !== formData.value.passengerCount) {
       // enforce all-or-none seat selection
       errors.value.passengers = errors.value.passengers || []
-      formData.value.passengers.forEach((p: any, index: number) => {
+      formData.value.passengers.forEach((p: PassengerForm, index: number) => {
         if (p.seatId === undefined) {
-          errors.value.passengers[index] = { ...(errors.value.passengers[index] || {}), seatId: 'Seat is required when any seats are selected' }
+          errors.value.passengers[index] = {
+            ...(errors.value.passengers[index] || {}),
+            seatId: 'Seat is required when any seats are selected',
+          }
         }
       })
       return
     }
 
-    // Build passengers payload from selected passenger IDs
-    const passengersPayload: AddPassengerRequest[] = formData.value.passengers.map((p: any) => {
-      const rec = passengerStore.passengers.find(x => x.id === p.passengerId)
-      if (!rec) {
-        throw new Error('Selected passenger not found')
-      }
-      return {
-        fullName: rec.fullName,
-        birthDate: rec.birthDate,
-        gender: rec.gender,
-        idPassport: rec.idPassport
-      }
-    })
+    // Build passengers payload directly from manual input
+    const passengersPayload: AddPassengerRequest[] = formData.value.passengers.map((p: PassengerForm) => ({
+      fullName: p.fullName,
+      birthDate: p.birthDate as any,
+      gender: Number(p.gender),
+      idPassport: p.idPassport,
+    }))
 
     const bookingData: AddBookingRequest = {
       flightId: formData.value.flightId,
@@ -423,12 +493,10 @@ const handleSubmit = async () => {
       contactPhone: formData.value.contactPhone,
       passengerCount: formData.value.passengerCount,
       passengers: passengersPayload,
-      seatIds: seatIds.length > 0 ? seatIds : undefined
+      seatIds: seatIds.length > 0 ? seatIds : undefined,
     }
 
-    const selectedPassengerIds: string[] = formData.value.passengers.map((p: any) => p.passengerId)
-
-    emit('submit', bookingData, selectedPassengerIds)
+    emit('submit', bookingData, passengersPayload)
   } catch (error) {
     console.error('Form submission error:', error)
   } finally {
@@ -441,8 +509,8 @@ onMounted(async () => {
     airlineStore.fetchAirlines(),
     airportStore.fetchAirports(),
     flightStore.fetchFlights(),
-    passengerStore.fetchPassengers()
   ])
+
   if (formData.value.flightId) {
     // Ensure detailed flight data and class list are present when flight is locked
     await flightStore.fetchFlightDetail(formData.value.flightId)
@@ -450,74 +518,167 @@ onMounted(async () => {
   }
 
   // Apply prefill for round-trip step 2 (same passengers and contact)
-  if (props.prefillPassengers && props.prefillPassengers.length > 0) {
-    formData.value.passengerCount = props.prefillPassengers.length
-    formData.value.passengers = props.prefillPassengers.map(id => ({
-      passengerId: id,
-      seatId: undefined
+  if (props.prefillPassengersData && props.prefillPassengersData.length > 0) {
+    formData.value.passengerCount = props.prefillPassengersData.length
+    formData.value.passengers = props.prefillPassengersData.map(p => ({
+      fullName: p.fullName,
+      birthDate: p.birthDate as any,
+      gender: p.gender as any,
+      idPassport: p.idPassport,
+      seatId: undefined,
     }))
   }
+
   if (props.prefillContact) {
     if (props.prefillContact.contactEmail) formData.value.contactEmail = props.prefillContact.contactEmail
     if (props.prefillContact.contactPhone) formData.value.contactPhone = props.prefillContact.contactPhone
   }
-})
 
-watch(() => formData.value.flightId, async () => {
-  if (formData.value.flightId) {
-    await classFlightStore.fetchByFlight(formData.value.flightId)
-  }
-})
-
-watch(() => formData.value.classFlightId, async () => {
+  // If class is already chosen (e.g., future prefill), ensure seats are loaded
   if (formData.value.classFlightId) {
-    // Clear selected seats when class changes to avoid cross-class invalid selections
-    formData.value.passengers = (formData.value.passengers || []).map((p: any) => ({ ...p, seatId: undefined }))
-    await seatStore.fetchByClassFlight(formData.value.classFlightId)
+    const cid = Number(formData.value.classFlightId)
+    if (!Number.isNaN(cid) && cid > 0) {
+      formData.value.classFlightId = cid
+      await seatStore.fetchByClassFlight(cid)
+    }
   }
 })
+
+watch(
+  () => formData.value.flightId,
+  async () => {
+    if (formData.value.flightId) {
+      await classFlightStore.fetchByFlight(formData.value.flightId)
+    }
+  },
+)
+
+watch(
+  () => formData.value.classFlightId,
+  async (val) => {
+    const cid = Number(val)
+    if (!cid || Number.isNaN(cid)) return
+
+    // Normalize to number so downstream logic is consistent
+    if (formData.value.classFlightId !== cid) {
+      formData.value.classFlightId = cid
+    }
+
+    // Clear selected seats when class changes to avoid cross-class invalid selections
+    formData.value.passengers = (formData.value.passengers || []).map((p: PassengerForm) => ({
+      ...p,
+      seatId: undefined,
+    }))
+
+    await seatStore.fetchByClassFlight(cid)
+  },
+)
 </script>
 
 <style scoped>
 .create-booking-form {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
+  max-width: 900px;
+  margin: -3rem auto 2.5rem;
+  padding: 2rem 2.25rem 2.25rem;
+  background: var(--color-white);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-gray-100);
+  position: relative;
+  z-index: 1;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.title-group .title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--color-gray-900);
+}
+
+.title-group .subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--color-gray-600);
+  font-size: 0.95rem;
 }
 
 .booking-form {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .form-section {
-  background: var(--color-white);
+  background: var(--color-gray-50);
   padding: 1.5rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   border: 1px solid var(--color-gray-200);
 }
 
 .form-section h3 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.75rem 0;
   color: var(--color-gray-800);
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.section-header {
+  margin-bottom: 0.75rem;
+}
+
+.section-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-gray-600);
 }
 
 .passenger-card {
-  background: var(--color-gray-50);
-  padding: 1rem;
-  border-radius: var(--radius-md);
+  background: var(--color-white);
+  padding: 1.1rem 1.25rem;
+  border-radius: var(--radius-lg);
   margin-top: 1rem;
   border: 1px solid var(--color-gray-200);
+  box-shadow: var(--shadow-sm);
 }
 
-.passenger-card h4 {
-  margin: 0 0 1rem 0;
-  color: var(--color-gray-700);
+.passenger-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.passenger-header h4 {
+  margin: 0;
+  color: var(--color-gray-800);
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.badge-locked {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-full);
+  background: rgba(249, 205, 213, 0.2);
+  color: var(--color-secondary-strong);
+}
+
+.passenger-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 0.75rem;
 }
 
 .form-actions {
@@ -530,22 +691,68 @@ watch(() => formData.value.classFlightId, async () => {
 
 /* Step banner and variant accents */
 .step-banner {
-  margin: 0.5rem 0 1rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
+  padding: 0.55rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
   font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
+
 .step-banner.departure {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid rgba(29,78,216,.2);
+  background: rgba(249, 205, 213, 0.16);
+  color: var(--color-secondary-strong);
+  border: 1px solid rgba(249, 205, 213, 0.5);
 }
+
 .step-banner.return {
-  background: #fef3c7;
-  color: #b45309;
-  border: 1px solid rgba(180,83,9,.2);
+  background: rgba(122, 132, 80, 0.12);
+  color: var(--color-secondary-strong);
+  border: 1px solid rgba(122, 132, 80, 0.4);
 }
-.variant-return .form-section h3 {
-  color: #b45309;
+
+.flight-summary {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-md);
+  background: rgba(249, 205, 213, 0.08);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.summary-row .k {
+  font-weight: 600;
+  color: var(--color-gray-600);
+}
+
+.summary-row .v {
+  font-weight: 600;
+  color: var(--color-gray-900);
+  text-align: right;
+}
+
+@media (max-width: 768px) {
+  .create-booking-form {
+    margin: -2.5rem 1rem 2rem;
+    padding: 1.5rem 1.5rem 1.75rem;
+  }
+
+  .form-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
 }
 </style>
