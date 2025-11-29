@@ -241,7 +241,10 @@
           <button
             v-if="flightStore.oneWayMode && canCreateBooking"
             class="btn btn-primary"
-            :disabled="Number(f.status) !== 1 || f.isDeleted"
+            :disabled="!(
+                Number(f.status) === 1 ||
+                Number(f.status) === 4
+              ) || f.isDeleted"
             @click="selectOneWay(f)"
           >
             Book Flight
@@ -251,7 +254,10 @@
             <button
               v-if="!flightStore.selectedDepartureFlightId"
               class="btn btn-primary"
-              :disabled="Number(f.status) !== 1 || f.isDeleted"
+              :disabled="!(
+                  Number(f.status) === 1 ||
+                  Number(f.status) === 4
+                ) || f.isDeleted"
               @click="selectDeparture(f)"
             >
               Select Departure
@@ -497,11 +503,12 @@ function undoRoundTrip() {
 function isValidReturnOption(f: any) {
   const out = flightStore.flights.find(x => x.id === flightStore.selectedDepartureFlightId)
   if (!out) return false
+  const s = Number(f.status)
   const cond =
     f.originAirportCode.toUpperCase() === out.destinationAirportCode.toUpperCase() &&
     f.destinationAirportCode.toUpperCase() === out.originAirportCode.toUpperCase() &&
     new Date(f.departureTime).getTime() >= new Date(out.arrivalTime).getTime() &&
-    Number(f.status) === 1 && !f.isDeleted
+    (s === 1 || s === 4) && !f.isDeleted
   return cond
 }
 

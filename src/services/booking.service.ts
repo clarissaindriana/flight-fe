@@ -3,10 +3,19 @@ import type { CommonResponseInterface } from '@/interfaces/common.response.inter
 import type { Booking, AddBookingRequest, UpdateBookingRequest } from '@/interfaces/booking.interface'
 
 export const bookingService = {
-  async getAllBookings(options?: { flightId?: string; includeDeleted?: boolean }): Promise<CommonResponseInterface<Booking[]>> {
+  async getAllBookings(options?: {
+    flightId?: string
+    includeDeleted?: boolean
+    search?: string
+    contactEmail?: string
+    status?: number
+  }): Promise<CommonResponseInterface<Booking[]>> {
     const params: Record<string, any> = {}
     if (options?.flightId) params.flightId = options.flightId
     if (options?.includeDeleted !== undefined) params.includeDeleted = options.includeDeleted
+    if (options?.search) params.search = options.search
+    if (options?.contactEmail) params.contactEmail = options.contactEmail
+    if (options?.status !== undefined) params.status = options.status
     const response = await api.get('/booking', { params })
     return response.data
   },

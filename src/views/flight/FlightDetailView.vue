@@ -105,9 +105,9 @@
                 <td>
                   <span
                     class="seat-badge"
-                    :class="s.passengerName ? 'occupied' : 'available'"
+                    :class="s.isBooked ? 'occupied' : 'available'"
                   >
-                    {{ s.passengerName ? 'Booked' : 'Available' }}
+                    {{ s.isBooked ? 'Booked' : 'Available' }}
                   </span>
                 </td>
                 <td>{{ s.passengerName || '—' }}</td>
@@ -168,6 +168,7 @@ import { useFlightStore } from '@/stores/flight/flight'
 import { useAirlineStore } from '@/stores/airline/airline'
 import { useAirportStore } from '@/stores/airport/airport'
 import { useSeatStore } from '@/stores/seat/seat'
+import { usePassengerStore } from '@/stores/passenger/passenger'
 import ClassFlightList from '@/components/classFlight/ClassFlightList.vue'
 import { canAccess } from '@/lib/rbac'
 import type { Seat } from '@/interfaces/seat.interface'
@@ -183,6 +184,7 @@ const flightStore = useFlightStore()
 const airlineStore = useAirlineStore()
 const airportStore = useAirportStore()
 const seatStore = useSeatStore()
+const passengerStore = usePassengerStore()
 
 // RBAC-based capabilities: hide admin-only actions for customers
 const canUpdateFlight = canAccess('flights/update')
@@ -194,9 +196,35 @@ const isStaff = canUpdateFlight || canCancelFlight
 
 const id = String(route.params.id || '')
 
+// Map classFlightId -> classType using current flight data
+const classTypeById = computed<Record<number, string>>(() => {
+  const f = flightStore.selectedFlight as any
+  if (!f || !Array.isArray(f.classes)) return {}
+  const map: Record<number, string> = {}
+  for (const c of f.classes) {
+    if (c && c.id != null) {
+      map[Number(c.id)] = c.classType
+    }
+  }
+  return map
+})
+
 const seatsForFlight = computed<SeatWithMeta[]>(() => {
   if (!id) return []
-  return (seatStore.byFlight[id] || []) as SeatWithMeta[]
+  const seats = (seatStore.byFlight[id] || []) as Seat[]
+  const classes = classTypeById.value
+
+  return seats.map((s) => {
+    const passenger = s.passengerId
+      ? passengerStore.passengers.find(p => p.id === s.passengerId)
+      : null
+
+    return {
+      ...s,
+      classType: classes[Number(s.classFlightId)] ?? null,
+      passengerName: passenger?.fullName ?? null,
+    }
+  })
 })
 
 onMounted(async () => {
@@ -206,9 +234,12 @@ onMounted(async () => {
   ])
   if (id) {
     await flightStore.fetchFlightDetail(id)
-    // Only staff (superadmin / flight airline) see seat details
+    // Only staff (superadmin / flight airline) see seat + passenger details
     if (isStaff) {
-      await seatStore.fetchByFlight(id)
+      await Promise.all([
+        seatStore.fetchByFlight(id),
+        passengerStore.fetchPassengers?.() ?? Promise.resolve(),
+      ])
     }
   }
 })

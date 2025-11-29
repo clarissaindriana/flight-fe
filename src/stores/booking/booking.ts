@@ -9,7 +9,13 @@ export const useBookingStore = defineStore('booking', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const fetchBookings = async (options?: { flightId?: string; includeDeleted?: boolean }) => {
+  const fetchBookings = async (options?: {
+    flightId?: string
+    includeDeleted?: boolean
+    search?: string
+    contactEmail?: string
+    status?: number
+  }) => {
     loading.value = true
     error.value = null
     try {
