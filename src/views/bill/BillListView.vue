@@ -284,11 +284,13 @@ const role = getUserRole();
 const isCustomer = role === 'Customer';
 const isSuperadmin = role === 'Superadmin';
 const isServiceFlight = role === 'Flight Airline';
+const isServiceAccommodation = role === 'Accommodation Owner';
+const isServiceRental = role === 'Rental Vendor';
+const isServiceInsurance = role === 'Insurance Provider';
+const isServiceTour = role === 'Tour Package Vendor';
 
-// Any non-customer, non-superadmin role that is a "service role"
-// For now we only explicitly know Flight Airline from FE type,
-// but this also makes the logic clearer.
-const isServiceRole = isServiceFlight;
+// Any service role (non-customer, non-superadmin)
+const isServiceRole = isServiceFlight || isServiceAccommodation || isServiceRental || isServiceInsurance || isServiceTour;
 
 // Store bindings
 const loading = computed(() => billStore.loading);
@@ -326,18 +328,13 @@ const serviceOptions = [
  * Map current FE role to backend serviceName for /api/bill/{serviceName}.
  * Backend expects exact names like "Flight", "Accommodation", etc. which
  * must match the Bill.serviceName stored in the DB.
- *
- * Currently FE only has explicit role "Flight Airline". When FE gains
- * other roles (Accommodation Owner, Rental Vendor, Insurance Provider,
- * Tour Package Vendor), this mapping can be extended accordingly.
  */
 const serviceServiceName = computed<string | null>(() => {
   if (isServiceFlight) return 'Flight';
-  // Future roles (when FE Role union is extended):
-  // if (role === 'Accommodation Owner') return 'Accommodation';
-  // if (role === 'Rental Vendor') return 'VehicleRental';
-  // if (role === 'Insurance Provider') return 'Insurance';
-  // if (role === 'Tour Package Vendor') return 'TourPackage';
+  if (isServiceAccommodation) return 'Accommodation';
+  if (isServiceRental) return 'VehicleRental';
+  if (isServiceInsurance) return 'Insurance';
+  if (isServiceTour) return 'TourPackage';
   return null;
 });
 

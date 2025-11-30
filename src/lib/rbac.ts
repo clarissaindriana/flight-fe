@@ -1,6 +1,6 @@
 import { getCurrentUser } from './auth';
 
-export type Role = 'Customer' | 'Flight Airline' | 'Superadmin';
+export type Role = 'Customer' | 'Superadmin' | 'Flight Airline' | 'Accommodation Owner' | 'Rental Vendor' | 'Insurance Provider' | 'Tour Package Vendor';
 
 export const hasRole = (requiredRoles: Role[]): boolean => {
   const user = getCurrentUser();
@@ -37,14 +37,14 @@ export const canAccess = (endpoint: string): boolean => {
 
     // Bills
     // Base access to Bills page
-    'bills': ['Customer', 'Superadmin', 'Flight Airline'],
+    'bills': ['Customer', 'Superadmin', 'Flight Airline', 'Accommodation Owner', 'Rental Vendor', 'Insurance Provider', 'Tour Package Vendor'],
     // Superadmin: Get All Bill
     'bills/admin': ['Superadmin'],
     // Customer: Get own bills + pay
     'bills/customer': ['Customer'],
     'bills/pay': ['Customer'],
-    // Service bills (for now only Flight Airline is modeled in FE roles)
-    'bills/service': ['Superadmin', 'Flight Airline'],
+    // Service bills
+    'bills/service': ['Superadmin', 'Flight Airline', 'Accommodation Owner', 'Rental Vendor', 'Insurance Provider', 'Tour Package Vendor'],
 
     // Bookings
     'bookings': ['Customer', 'Superadmin', 'Flight Airline'],
