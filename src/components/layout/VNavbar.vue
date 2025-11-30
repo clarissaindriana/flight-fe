@@ -23,6 +23,10 @@
           <span class="link-icon">🎫</span>
           Bookings
         </router-link>
+        <router-link v-if="canAccess('bills')" to="/bills" class="nav-link">
+          <span class="link-icon">💳</span>
+          Bills
+        </router-link>
       </div>
 
       <div class="nav-auth">

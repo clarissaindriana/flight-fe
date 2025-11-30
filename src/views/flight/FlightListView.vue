@@ -373,8 +373,14 @@ const displayFlights = computed(() => {
       return (s === 1 || s === 4) && !f.isDeleted
     }
 
-    // Staff default: Scheduled, Delayed, In Flight
-    return s === 1 || s === 4 || s === 2
+    // Staff (Superadmin / Flight Airline) default view:
+    // - When showInactive is false: Scheduled, Delayed, In Flight
+    // - When showInactive is true: also include Finished (3)
+    if (showInactive.value) {
+      return s === 1 || s === 2 || s === 3 || s === 4
+    }
+
+    return s === 1 || s === 2 || s === 4
   })
 
   const statusRank = (s: number) => {

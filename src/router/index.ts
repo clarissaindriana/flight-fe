@@ -94,6 +94,18 @@ const router = createRouter({
       component: () => import('@/views/booking/UpdateBookingView.vue'),
       props: true,
     },
+    // Bills
+    {
+      path: '/bills',
+      name: 'bills',
+      component: () => import('@/views/bill/BillListView.vue'),
+    },
+    {
+      path: '/bills/:id',
+      name: 'bill-detail',
+      component: () => import('@/views/bill/BillDetailView.vue'),
+      props: true,
+    },
   ],
 })
 
@@ -125,6 +137,9 @@ router.beforeEach((to, from, next) => {
       'bookings': ['bookings'],
       'booking-create': ['bookings/create'],
       'booking-update': ['bookings/update'],
+      // Bills
+      'bills': ['bills'],
+      'bill-detail': ['bills'],
     }
 
     const requiredPermission = routePermissions[to.name as string]

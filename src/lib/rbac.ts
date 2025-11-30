@@ -35,6 +35,17 @@ export const canAccess = (endpoint: string): boolean => {
     'flights/delete': ['Superadmin', 'Flight Airline'],
     'flights/reminder': ['Customer', 'Superadmin', 'Flight Airline'],
 
+    // Bills
+    // Base access to Bills page
+    'bills': ['Customer', 'Superadmin', 'Flight Airline'],
+    // Superadmin: Get All Bill
+    'bills/admin': ['Superadmin'],
+    // Customer: Get own bills + pay
+    'bills/customer': ['Customer'],
+    'bills/pay': ['Customer'],
+    // Service bills (for now only Flight Airline is modeled in FE roles)
+    'bills/service': ['Superadmin', 'Flight Airline'],
+
     // Bookings
     'bookings': ['Customer', 'Superadmin', 'Flight Airline'],
     'bookings/create': ['Customer', 'Superadmin'],
