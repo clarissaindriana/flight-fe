@@ -29,10 +29,12 @@ import BookingDetail from '@/components/booking/BookingDetail.vue'
 import CancelBooking from '@/components/booking/CancelBooking.vue'
 import VButton from '@/components/common/VButton.vue'
 import { useBookingStore } from '@/stores/booking/booking'
+import { useBillStore } from '@/stores/bill/bill'
 
 const route = useRoute()
 const router = useRouter()
 const bookingStore = useBookingStore()
+const billStore = useBillStore()
 
 const bookingId = route.params.id as string
 const showCancelModal = ref(false)
@@ -58,6 +60,9 @@ const handleCancelConfirm = async (id: string) => {
 
 onMounted(async () => {
   await bookingStore.fetchBooking(bookingId)
+  // Fetch bills to adjust booking status display
+  await billStore.fetchCustomerBills()
+  await billStore.fetchServiceBills({ serviceName: 'Flight' })
 })
 </script>
 

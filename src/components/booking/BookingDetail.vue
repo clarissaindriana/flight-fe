@@ -9,14 +9,14 @@
         <h2>Booking Details</h2>
         <div class="header-actions">
           <VButton
-            v-if="booking && !booking.isDeleted && canUpdateBooking && (booking.status === 1 || booking.status === 2) && (flightStatus === 1 || flightStatus === 4)"
+            v-if="booking && !booking.isDeleted && canUpdateBooking && adjustedBookingStatus === 1 && (flightStatus === 1 || flightStatus === 4)"
             variant="primary"
             @click="$emit('update', booking.id)"
           >
             Update Booking
           </VButton>
           <VButton
-            v-if="booking && !booking.isDeleted && canCancelBooking && (booking.status === 1 || booking.status === 2) && (flightStatus === 1 || flightStatus === 4)"
+            v-if="booking && !booking.isDeleted && canCancelBooking && adjustedBookingStatus === 1 && (flightStatus === 1 || flightStatus === 4)"
             variant="danger"
             @click="$emit('cancel', booking.id)"
           >
@@ -52,8 +52,8 @@
             </div>
             <div class="info-item">
               <label>Status:</label>
-              <span :class="['status-badge', getStatusClass(booking.status)]">
-                {{ getStatusText(booking.status) }}
+              <span :class="['status-badge', getStatusClass(adjustedBookingStatus)]">
+                {{ getStatusText(adjustedBookingStatus) }}
               </span>
             </div>
             <div class="info-item">
@@ -127,6 +127,7 @@ import VButton from '@/components/common/VButton.vue'
 import { useBookingStore } from '@/stores/booking/booking'
 import { usePassengerStore } from '@/stores/passenger/passenger'
 import { useFlightStore } from '@/stores/flight/flight'
+import { useBillStore } from '@/stores/bill/bill'
 import type { Booking } from '@/interfaces/booking.interface'
 import { canAccess } from '@/lib/rbac'
 
@@ -144,6 +145,7 @@ const emit = defineEmits<{
 const bookingStore = useBookingStore()
 const passengerStore = usePassengerStore()
 const flightStore = useFlightStore()
+const billStore = useBillStore()
 
 const canUpdateBooking = canAccess('bookings/update')
 const canCancelBooking = canAccess('bookings/cancel')
@@ -163,8 +165,42 @@ watch(booking, async (b) => {
   }
 }, { immediate: true })
 
+// Load bill for this booking to adjust status display
+watch(booking, async (b) => {
+  if (b?.id) {
+    try {
+      // Try to find the bill by serviceReferenceId (booking id)
+      // For customers, fetch their bills and find the matching one
+      // For admins, we might need to fetch service bills
+      await billStore.fetchCustomerBills()
+      const bill = billStore.customerBills.find(bill => bill.serviceReferenceId === b.id)
+      if (bill) {
+        billStore.currentBill = bill
+      } else {
+        // If not found in customer bills, try service bills (for admins)
+        await billStore.fetchServiceBills({ serviceName: 'Flight' })
+        const serviceBill = billStore.serviceBills.find(bill => bill.serviceReferenceId === b.id)
+        if (serviceBill) {
+          billStore.currentBill = serviceBill
+        }
+      }
+    } catch (e) {
+      // ignore - bill fetching failure shouldn't break booking display
+    }
+  }
+}, { immediate: true })
+
 const flight = computed(() => flightStore.selectedFlight)
 const flightStatus = computed(() => flight.value?.status ?? null)
+
+// Fetch bill for this booking and adjust status display
+const bookingBill = computed(() => billStore.currentBill)
+const adjustedBookingStatus = computed(() => {
+  if (bookingBill.value && bookingBill.value.status === 'PAID') {
+    return 2 // Paid
+  }
+  return booking.value?.status ?? 1 // Default to booking status or Unpaid
+})
 
 const getStatusText = (status: number): string => {
   return bookingStore.getBookingStatusText(status)
@@ -289,8 +325,8 @@ const getSeatCode = (passengerId: string): string => {
 }
 
 .status-cancelled {
-  background: var(--color-red-100);
-  color: var(--color-red-800);
+  background: var(--color-gray-100);
+  color: var(--color-gray-800);
 }
 
 .status-rescheduled {

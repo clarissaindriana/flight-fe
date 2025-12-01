@@ -120,6 +120,7 @@ import VSelect from '@/components/common/VSelect.vue'
 import VButton from '@/components/common/VButton.vue'
 import { useBookingStore } from '@/stores/booking/booking'
 import { useSeatStore } from '@/stores/seat/seat'
+import { useBillStore } from '@/stores/bill/bill'
 import type { UpdateBookingRequest } from '@/interfaces/booking.interface'
 import type { AddPassengerRequest, UpdatePassengerRequest } from '@/interfaces/passenger.interface'
 
@@ -136,6 +137,7 @@ const emit = defineEmits<{
 
 const bookingStore = useBookingStore()
 const seatStore = useSeatStore()
+const billStore = useBillStore()
 
 const loading = ref(false)
 const errors = ref<Record<string, string>>({})
@@ -153,6 +155,15 @@ const genderOptions = [
 ]
 
 const booking = computed(() => bookingStore.currentBooking)
+const adjustedBookingStatus = computed(() => {
+  if (booking.value) {
+    // Check if there's a paid bill for this booking
+    const allBills = [...billStore.customerBills, ...billStore.serviceBills, ...billStore.allBills]
+    const bill = allBills.find(b => b.serviceReferenceId === booking.value!.id && b.status === 'PAID')
+    return bill ? 2 : booking.value.status
+  }
+  return 1 // Default to Unpaid
+})
 const futureCount = computed(() => {
   return existingPassengers.value.filter(p => !p.removed).length + newPassengers.value.length
 })
@@ -295,9 +306,11 @@ const seatOptionsForNew = (_index: number, _currentSeatId?: number | null) => {
 }
 
 const isFormValid = computed(() => {
-  return formData.value.contactEmail &&
-         formData.value.contactPhone &&
-         /\S+@\S+\.\S+/.test(formData.value.contactEmail)
+  const hasValidContactInfo = formData.value.contactEmail &&
+                              formData.value.contactPhone &&
+                              /\S+@\S+\.\S+/.test(formData.value.contactEmail)
+  const hasValidStatus = adjustedBookingStatus.value === 1 || adjustedBookingStatus.value === 2
+  return hasValidContactInfo && hasValidStatus
 })
 
 const toggleSeat = (_seatId: number) => {

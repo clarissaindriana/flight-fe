@@ -100,6 +100,28 @@ export const useBookingStore = defineStore('booking', () => {
     }
   }
 
+  /**
+   * Refresh a specific booking by ID. Useful for updating status after external events (e.g., payment).
+   * Silently updates both the global list and currentBooking if it matches.
+   */
+  const refreshBooking = async (id: string) => {
+    try {
+      const response = await bookingService.getBooking(id)
+      const index = bookings.value.findIndex(b => b.id === id)
+      if (index !== -1) {
+        bookings.value[index] = response.data
+      }
+      if (currentBooking.value?.id === id) {
+        currentBooking.value = response.data
+      }
+      return response.data
+    } catch (err) {
+      // Silently fail for refresh - don't interrupt user flow
+      console.warn('Failed to refresh booking:', err)
+      return null
+    }
+  }
+
   const getBookingStatusText = (status: number): string => {
     switch (status) {
       case 1: return 'Unpaid'
@@ -124,6 +146,7 @@ export const useBookingStore = defineStore('booking', () => {
     createBooking,
     updateBooking,
     cancelBooking,
+    refreshBooking,
     getBookingStatusText,
     clearError,
   }

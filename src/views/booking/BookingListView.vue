@@ -92,11 +92,13 @@ import { useRouter } from 'vue-router'
 import BookingList from '@/components/booking/BookingList.vue'
 import { useBookingStore } from '@/stores/booking/booking'
 import { useFlightStore } from '@/stores/flight/flight'
+import { useBillStore } from '@/stores/bill/bill'
 import { canAccess } from '@/lib/rbac'
 
 const router = useRouter()
 const bookingStore = useBookingStore()
 const flightStore = useFlightStore()
+const billStore = useBillStore()
 
 // RBAC: only Superadmin & Flight Airline can view inactive bookings
 const canViewInactive = canAccess('bookings/inactive')
@@ -141,6 +143,9 @@ const reload = async () => {
     contactEmail: contactEmail.value || undefined,
     status: status.value ? Number(status.value) : undefined,
   })
+  // Fetch bills to adjust booking status display
+  await billStore.fetchCustomerBills()
+  await billStore.fetchServiceBills({ serviceName: 'Flight' })
 }
 
 

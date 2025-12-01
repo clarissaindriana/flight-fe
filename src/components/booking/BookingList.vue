@@ -27,8 +27,8 @@
       >
         <div class="booking-header">
           <h3>{{ booking.id }}</h3>
-          <span :class="['status-badge', getStatusClass(booking.status)]">
-            {{ getStatusText(booking.status) }}
+          <span :class="['status-badge', getStatusClass(getAdjustedStatus(booking))]">
+            {{ getStatusText(getAdjustedStatus(booking)) }}
           </span>
         </div>
 
@@ -82,6 +82,7 @@ import { computed } from 'vue'
 import VButton from '@/components/common/VButton.vue'
 import { useBookingStore } from '@/stores/booking/booking'
 import { useFlightStore } from '@/stores/flight/flight'
+import { useBillStore } from '@/stores/bill/bill'
 import type { Booking } from '@/interfaces/booking.interface'
 import { canAccess } from '@/lib/rbac'
 
@@ -101,6 +102,7 @@ const emit = defineEmits<{
 
 const bookingStore = useBookingStore()
 const flightStore = useFlightStore()
+const billStore = useBillStore()
 
 const canCreateBooking = canAccess('bookings/create')
 const canUpdateBooking = canAccess('bookings/update')
@@ -164,15 +166,23 @@ const canMutateByFlight = (status: number | null): boolean => {
 }
 
 const canUpdate = (booking: Booking): boolean => {
-  const bs = Number(booking.status)
+  const bs = Number(getAdjustedStatus(booking))
   const fs = getFlightStatus(booking)
   return !booking.isDeleted && (bs === 1 || bs === 2) && canMutateByFlight(fs)
 }
 
 const canCancel = (booking: Booking): boolean => {
-  const bs = Number(booking.status)
+  const bs = Number(getAdjustedStatus(booking))
   const fs = getFlightStatus(booking)
-  return !booking.isDeleted && (bs === 1 || bs === 2) && canMutateByFlight(fs)
+  return !booking.isDeleted && bs === 1 && canMutateByFlight(fs)
+}
+
+// Get adjusted status based on bill payment status
+const getAdjustedStatus = (booking: Booking): number => {
+  // Check if there's a paid bill for this booking
+  const allBills = [...billStore.customerBills, ...billStore.serviceBills, ...billStore.allBills]
+  const bill = allBills.find(b => b.serviceReferenceId === booking.id && b.status === 'PAID')
+  return bill ? 2 : booking.status
 }
 </script>
 
@@ -266,8 +276,8 @@ const canCancel = (booking: Booking): boolean => {
 }
 
 .status-cancelled {
-  background: var(--color-red-100);
-  color: var(--color-red-800);
+  background: var(--color-gray-100);
+  color: var(--color-gray-800);
 }
 
 .status-rescheduled {

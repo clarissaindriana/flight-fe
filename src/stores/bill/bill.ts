@@ -112,6 +112,21 @@ export const useBillStore = defineStore('bill', () => {
       updateInList(serviceBills.value);
 
       successMessage.value = 'Pembayaran Berhasil!';
+      
+      // Automatically refresh related booking if this is a flight bill.
+      // The backend callback will handle it, but we also refresh here proactively for UX.
+      if (paid.serviceName && paid.serviceName.toLowerCase() === 'flight' && paid.serviceReferenceId) {
+        try {
+          const { useBookingStore } = await import('@/stores/booking/booking');
+          const bookingStore = useBookingStore();
+          await bookingStore.refreshBooking(paid.serviceReferenceId);
+        } catch (e) {
+          // Silently fail - this is just a UX improvement, not critical
+          console.warn('Failed to refresh booking after payment:', e);
+        }
+      }
+      
+      // Return the paid bill data for caller to use
       return paid;
     } catch (err: any) {
       // Keep API validation messages

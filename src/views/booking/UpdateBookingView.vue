@@ -24,11 +24,13 @@ import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import UpdateBookingForm from '@/components/booking/UpdateBookingForm.vue'
 import { useBookingStore } from '@/stores/booking/booking'
+import { useBillStore } from '@/stores/bill/bill'
 import type { UpdateBookingRequest } from '@/interfaces/booking.interface'
 
 const route = useRoute()
 const router = useRouter()
 const bookingStore = useBookingStore()
+const billStore = useBillStore()
 
 const bookingId = route.params.id as string
 
@@ -50,6 +52,9 @@ const handleCancel = () => {
 onMounted(async () => {
   // Load booking details for the form
   await bookingStore.fetchBooking(bookingId)
+  // Fetch bills to determine booking status for form validation
+  await billStore.fetchCustomerBills()
+  await billStore.fetchServiceBills({ serviceName: 'Flight' })
 })
 </script>
 
